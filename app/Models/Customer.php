@@ -21,7 +21,10 @@ class Customer extends Model
         'status',
         'supply_preference',
         'notes',
+        'delivery_pin_required',
     ];
+
+    protected $casts = ['client_id' => 'integer', 'status' => 'integer', 'delivery_pin_required' => 'boolean'];
 
     public function addresses()
     {

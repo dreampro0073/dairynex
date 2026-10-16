@@ -11,15 +11,11 @@ use Inertia\Inertia;
 
 class DeliveryBoyController extends Controller
 {
-    private const DELIVERY_BOY_TYPE = 5;
+    private const DELIVERY_BOY_TYPE = \App\Enums\Role::DeliveryBoy->value;
 
-    /*
-     * Same as your CustomerController.
-     * Later auth()->user()->client_id kar dena.
-     */
     private function clientId()
     {
-        return 1;
+        return \App\Support\Tenant::id();
     }
 
     /**
@@ -161,14 +157,13 @@ class DeliveryBoyController extends Controller
                 $validated['email']
                 ?? null;
 
-            /*
-             * Existing dump me bhi password
-             * blank hai.
-             */
-            $deliveryBoy->password = '';
 
             $deliveryBoy->status =
                 $validated['status'] ?? 1;
+
+            if (!empty($validated['password'])) {
+                $deliveryBoy->password = $validated['password'];
+            }
 
             $deliveryBoy->save();
 
@@ -287,6 +282,10 @@ class DeliveryBoyController extends Controller
             $deliveryBoy->status =
                 $validated['status'];
 
+            if (!empty($validated['password'])) {
+                $deliveryBoy->password = $validated['password'];
+            }
+
             $deliveryBoy->save();
 
             $this->assignRoute(
@@ -317,6 +316,16 @@ class DeliveryBoyController extends Controller
             $deliveryBoy,
             $clientId
         );
+
+        if (\Illuminate\Support\Facades\DB::table('deliveries')->where('delivery_boy_id', $deliveryBoy->id)->exists()) {
+            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        }
+        if (\Illuminate\Support\Facades\DB::table('payments')->where('collected_by_user_id', $deliveryBoy->id)->exists()) {
+            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        }
+        if (\Illuminate\Support\Facades\DB::table('customer_ledger')->where('created_by_user_id', $deliveryBoy->id)->exists()) {
+            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        }
 
         DB::transaction(function () use (
             $deliveryBoy,
@@ -361,6 +370,7 @@ class DeliveryBoyController extends Controller
         ?int $deliveryBoyId = null
     ) {
         return $request->validate([
+            'password' => [$deliveryBoyId ? 'nullable' : 'required', 'confirmed', \Illuminate\Validation\Rules\Password::min(12)],
             'name' => [
                 'required',
                 'string',
@@ -534,8 +544,25 @@ class DeliveryBoyController extends Controller
     /**
      * Routes Dropdown
      */
+    private function checkDeliveryBoy(User $deliveryBoy, int $clientId): void
+    {
+        abort_unless((int) $deliveryBoy->client_id === $clientId
+            && $deliveryBoy->role() === \App\Enums\Role::DeliveryBoy, 403);
+    }
+
     private function getRoutes(
         int $clientId,
         ?int $currentDeliveryBoyId = null
     ) {
-        $routes = DB::table(
+        return DB::table('delivery_routes')
+            ->where('client_id', $clientId)
+            ->where('status', 1)
+            ->where(function ($query) use ($currentDeliveryBoyId) {
+                $query->where('delivery_boy_id', 0);
+                if ($currentDeliveryBoyId !== null) {
+                    $query->orWhere('delivery_boy_id', $currentDeliveryBoyId);
+                }
+            })
+            ->orderBy('name')->get(['id', 'name']);
+    }
+}

@@ -64,29 +64,8 @@ const shortMoney = (value) => {
     return `₹${money(amount)}`
 }
 
-const deliveryStatusClass = (status) => {
-    status = Number(status)
-
-    if (status === 1) return 'pending'
-    if (status === 2) return 'ok'
-    if (status === 3) return 'due'
-    if (status === 4) return 'neutral'
-    if (status === 5) return 'due'
-
-    return 'neutral'
-}
-
-const deliveryStatusText = (status) => {
-    status = Number(status)
-
-    if (status === 1) return 'Pending'
-    if (status === 2) return 'Delivered'
-    if (status === 3) return 'Skipped'
-    if (status === 4) return 'Cancelled'
-    if (status === 5) return 'Failed'
-
-    return '-'
-}
+const deliveryStatusClass = status => ({ 1: 'pending', 2: 'pending', 3: 'ok', 4: 'due', 5: 'neutral', 6: 'due', 7: 'due', 8: 'pending' }[Number(status)] ?? 'neutral')
+const deliveryStatusText = status => ({ 1: 'Pending', 2: 'PIN verified', 3: 'Delivered', 4: 'Skipped', 5: 'Cancelled', 6: 'Failed', 7: 'Customer unavailable', 8: 'Partial' }[Number(status)] ?? 'Unknown')
 </script>
 
 <template>

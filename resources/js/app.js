@@ -11,7 +11,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 createInertiaApp({
-    title: (title) => `${title} - My Application`,
+    title: (title) => `${title} - DairyNex`,
 
     resolve: (name) =>
         resolvePageComponent(

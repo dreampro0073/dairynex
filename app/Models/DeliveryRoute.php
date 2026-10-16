@@ -17,6 +17,7 @@ class DeliveryRoute extends Model
     ];
 
     protected $casts = [
+        'client_id' => 'integer',
         'route_date' => 'date',
         'status' => 'integer',
         'expected_stops' => 'integer',

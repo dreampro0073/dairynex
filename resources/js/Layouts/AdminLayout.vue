@@ -1,12 +1,14 @@
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const page = usePage()
 
 const sidebarOpen = ref(false)
 
 const currentUrl = computed(() => page.url)
+watch(currentUrl, () => { sidebarOpen.value = false })
+const userInitials = computed(() => (page.props.auth?.user?.name ?? 'DN').split(' ').map(part => part[0]).slice(0, 2).join(''))
 
 const isActive = (path) => {
     return currentUrl.value.startsWith(path)
@@ -34,16 +36,16 @@ const closeSidebar = () => {
             >
                 <div class="sidebar-brand">
                     <div class="logo">
-                        SK
+                        {{ userInitials }}
                     </div>
 
                     <div>
                         <div class="name">
-                            Shree Krishna Dairy
+                            {{ page.props.auth?.client?.name ?? 'DairyNex' }}
                         </div>
 
                         <div class="sub">
-                            Premium · Haridwar
+                            {{ page.props.auth?.client?.city ?? 'Dairy management' }}
                         </div>
                     </div>
                 </div>
@@ -164,19 +166,7 @@ const closeSidebar = () => {
                         Delivery Boys
                     </Link>
 
-                    <Link
-                        href="/pin-verification"
-                        class="nav-item"
-                        :class="{
-                            current: isActive('/pin-verification')
-                        }"
-                    >
-                        <span class="ic">
-                            <i class="bi bi-key"></i>
-                        </span>
 
-                        PIN Verification
-                    </Link>
                 </div>
 
                 <div class="nav-group">
@@ -229,6 +219,8 @@ const closeSidebar = () => {
                         type="button"
                         class="menu-btn"
                         @click="sidebarOpen = true"
+                        aria-label="Open navigation"
+                        :aria-expanded="sidebarOpen"
                     >
                         <i class="bi bi-list"></i>
                     </button>
@@ -251,23 +243,22 @@ const closeSidebar = () => {
                             Search customer, mobile, invoice...
                         </div>
 
-                        <button
-                            type="button"
-                            class="btn secondary sm"
-                        >
-                            <i class="bi bi-bell"></i>
-                        </button>
+                        <Link href="/notifications" class="btn secondary sm" aria-label="Notifications"><i class="bi bi-bell"></i></Link>
 
                         <slot name="header-action"></slot>
+                        <Link href="/logout" method="post" as="button" class="btn secondary sm">Sign out</Link>
 
                         <div class="avatar">
-                            RK
+                            {{ userInitials }}
                         </div>
                     </div>
                 </header>
 
                 <section class="content">
                     <div class="content-inner">
+                        <div v-if="page.props.flash?.success" class="alert alert-success" role="status">{{ page.props.flash.success }}</div>
+                        <div v-if="page.props.flash?.error" class="alert alert-danger" role="alert">{{ page.props.flash.error }}</div>
+                        <div v-if="page.props.errors?.delete" class="alert alert-danger" role="alert">{{ page.props.errors.delete }}</div>
                         <slot />
                     </div>
                 </section>

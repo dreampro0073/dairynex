@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 const props = defineProps({
+    pinRequiredDefault: { type: Boolean, default: true },
     customer: {
         type: Object,
         default: null,
@@ -37,6 +38,8 @@ const existingItems =
 
 const form = useForm({
     name: props.customer?.name ?? '',
+    delivery_pin_required: props.customer?.delivery_pin_required ?? props.pinRequiredDefault,
+    status: Number(props.customer?.status ?? 1),
     mobile: props.customer?.mobile ?? '',
     email: props.customer?.email ?? '',
 
@@ -530,6 +533,24 @@ const submit = (withSubscription = false) => {
                             step="0.0000001"
                             placeholder="e.g. 78.1642"
                         >
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head"><h3>Delivery PIN Verification</h3></div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="customer-status">Account status</label>
+                        <select id="customer-status" v-model="form.status"><option :value="1">Active</option><option :value="2">Paused</option><option :value="0">Inactive</option></select>
+                        <div v-if="form.errors.status" class="error-text">{{ form.errors.status }}</div>
+                        <label for="delivery-pin-required">Verification policy for future deliveries</label>
+                        <select id="delivery-pin-required" v-model="form.delivery_pin_required">
+                            <option :value="true">Enabled — PIN required</option>
+                            <option :value="false">Disabled — no PIN required</option>
+                        </select>
+                        <div v-if="form.errors.delivery_pin_required" class="error-text">{{ form.errors.delivery_pin_required }}</div>
+                        <p>Existing deliveries keep their recorded verification policy.</p>
                     </div>
                 </div>
             </div>

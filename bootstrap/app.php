@@ -11,8 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->web(append: [\App\Http\Middleware\HandleInertiaRequests::class]);
+        $middleware->alias(['account' => \App\Http\Middleware\EnsureAccountAccess::class]);
+        $middleware->redirectGuestsTo('/login');
+        $middleware->redirectUsersTo(fn () => auth()->user()?->role()?->home() ?? '/login');
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->dontFlash(['pin']);
     })->create();

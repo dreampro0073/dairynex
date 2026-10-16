@@ -16,19 +16,22 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        // Baad me auth()->user()->client_id
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
+
+        $movements = DB::table('customer_ledger')->where('client_id', $clientId)->selectRaw('customer_id, SUM(debit-credit) as movement')->groupBy('customer_id')->pluck('movement', 'customer_id');
 
         $customers = Customer::query()
         ->where('client_id', $clientId)
         ->with([
-            'defaultAddress',
-            'routes:id,name',
-            'subscriptions.items.product:id,name',
+            'defaultAddress' => fn ($query) => $query->where('client_id', $clientId),
+            'routes' => fn ($query) => $query->where('delivery_routes.client_id', $clientId)->select('delivery_routes.id', 'name'),
+            'subscriptions' => fn ($query) => $query->where('client_id', $clientId),
+            'subscriptions.items' => fn ($query) => $query->where('client_id', $clientId),
+            'subscriptions.items.product' => fn ($query) => $query->where('client_id', $clientId)->select('id', 'name'),
         ])
         ->latest('id')
         ->get()
-        ->map(function ($customer) {
+        ->map(function ($customer) use ($movements) {
             $route = $customer->routes->first();
 
             $subscription = $customer->subscriptions
@@ -55,6 +58,7 @@ class CustomerController extends Controller
             return [
                 'id' => $customer->id,
                 'name' => $customer->name,
+                'delivery_pin_required' => $customer->delivery_pin_required,
                 'mobile' => $customer->mobile,
 
                 'route_id' => $route?->id,
@@ -66,7 +70,7 @@ class CustomerController extends Controller
                 'today_qty' => $todayQty,
 
                 'outstanding' =>
-                    (float) $customer->opening_balance,
+                    (float) $customer->opening_balance + (float) ($movements[$customer->id] ?? 0),
             ];
         });
 
@@ -109,10 +113,11 @@ class CustomerController extends Controller
     }
 
     public function create(){
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         return Inertia::render('Customers/Form', [
             'customer' => null,
+            'pinRequiredDefault' => (bool) config('dairynex.delivery_pin_required', true),
 
             'routes' => DeliveryRoute::query()
                 ->where('client_id', $clientId)
@@ -138,7 +143,7 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         $validated = $this->validateCustomer(
             $request,
@@ -149,6 +154,7 @@ class CustomerController extends Controller
             $validated,
             $clientId
         ) {
+            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
             $customer = Customer::create([
                 'client_id' => $clientId,
 
@@ -157,6 +163,7 @@ class CustomerController extends Controller
                 ),
 
                 'name' => $validated['name'],
+                'delivery_pin_required' => $validated['delivery_pin_required'] ?? (bool) config('dairynex.delivery_pin_required', true),
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
 
@@ -174,10 +181,18 @@ class CustomerController extends Controller
                 'customer_type' =>
                     $validated['customer_type'],
 
-                'status' => 1,
+                'status' => $validated['status'] ?? 1,
 
                 'supply_preference' =>
                     $validated['supply_preference'],
+            ]);
+
+            DB::table('audit_logs')->insert([
+                'client_id' => $clientId, 'user_id' => auth()->id(),
+                'action' => 'customer_saved', 'table_name' => 'customers',
+                'record_id' => $customer->id,
+                'new_values' => json_encode(['delivery_pin_required' => $customer->delivery_pin_required]),
+                'created_at' => now(),
             ]);
 
             $this->saveAddress(
@@ -216,7 +231,7 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
@@ -224,13 +239,13 @@ class CustomerController extends Controller
         );
 
         $customer->load([
-            'defaultAddress',
-            'routes',
-            'subscriptions' => function ($query) {
-                $query->where('status', 1)
+            'defaultAddress' => fn ($query) => $query->where('client_id', $clientId),
+            'routes' => fn ($query) => $query->where('delivery_routes.client_id', $clientId),
+            'subscriptions' => function ($query) use ($clientId) {
+                $query->where('client_id', $clientId)->where('status', 1)
                     ->latest('id');
             },
-            'subscriptions.items',
+            'subscriptions.items' => fn ($query) => $query->where('client_id', $clientId),
         ]);
 
         $subscription = $customer
@@ -241,6 +256,7 @@ class CustomerController extends Controller
             'customer' => [
                 'id' => $customer->id,
                 'name' => $customer->name,
+                'delivery_pin_required' => $customer->delivery_pin_required,
                 'mobile' => $customer->mobile,
                 'email' => $customer->email,
 
@@ -346,7 +362,7 @@ class CustomerController extends Controller
         Request $request,
         Customer $customer
     ) {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
@@ -358,14 +374,26 @@ class CustomerController extends Controller
             $clientId,
             $customer->id
         );
+        $validated['delivery_pin_required'] ??= $customer->delivery_pin_required;
+        $validated['status'] ??= $customer->status;
 
         DB::transaction(function () use (
             $customer,
             $validated,
             $clientId
         ) {
+            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
+            $customer = Customer::where('client_id', $clientId)->lockForUpdate()->findOrFail($customer->id);
+        if (\App\Support\Decimal::scaled($validated['opening_balance'] ?? 0, 2) !== \App\Support\Decimal::scaled($customer->opening_balance ?? 0, 2)
+            && DB::table('customer_ledger')->where('client_id', $clientId)->where('customer_id', $customer->id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['opening_balance' => 'Opening balance cannot be changed after ledger activity. Use an authorized adjustment.']);
+        }
+
+
             $customer->update([
+                'status' => $validated['status'],
                 'name' => $validated['name'],
+                'delivery_pin_required' => $validated['delivery_pin_required'] ?? (bool) config('dairynex.delivery_pin_required', true),
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
 
@@ -385,6 +413,14 @@ class CustomerController extends Controller
 
                 'supply_preference' =>
                     $validated['supply_preference'],
+            ]);
+
+            DB::table('audit_logs')->insert([
+                'client_id' => $clientId, 'user_id' => auth()->id(),
+                'action' => 'customer_saved', 'table_name' => 'customers',
+                'record_id' => $customer->id,
+                'new_values' => json_encode(['delivery_pin_required' => $customer->delivery_pin_required]),
+                'created_at' => now(),
             ]);
 
             $this->saveAddress(
@@ -419,33 +455,37 @@ class CustomerController extends Controller
             );
     }
 
+    public function show(Customer $customer)
+    {
+        abort_unless($customer->client_id === \App\Support\Tenant::id(), 403);
+        return Inertia::render('Customers/Show', [
+            'customer' => $customer->only(['id', 'name', 'mobile', 'email', 'status', 'delivery_pin_required', 'user_id']),
+            'logins' => \App\Models\User::where('client_id', $customer->client_id)->where('user_type_id', \App\Enums\Role::Customer->value)->where('status', 1)
+                ->whereNotIn('id', Customer::whereNotNull('user_id')->select('user_id'))->get(['id', 'name', 'mobile']),
+        ]);
+    }
+
     public function destroy(Customer $customer)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
             403
         );
 
-        DB::transaction(function () use ($customer) {
-            $customer->subscriptions()
-                ->each(function ($subscription) {
-                    $subscription->items()->delete();
-                    $subscription->delete();
-                });
-
-            DB::table('delivery_route_customers')
-                ->where(
-                    'customer_id',
-                    $customer->id
-                )
-                ->delete();
-
-            $customer->addresses()->delete();
-
+        DB::transaction(function () use ($customer, $clientId) {
+            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
+            $customer = Customer::where('client_id', $clientId)->lockForUpdate()->findOrFail($customer->id);
+            foreach (['deliveries', 'customer_ledger', 'payments', 'invoices', 'payment_plans', 'subscriptions'] as $table) {
+                if (DB::table($table)->where('customer_id', $customer->id)->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'This customer has business history. Deactivate the customer instead.']);
+                }
+            }
+            DB::table('delivery_route_customers')->where('client_id', $clientId)->where('customer_id', $customer->id)->delete();
+            $customer->addresses()->where('client_id', $clientId)->delete();
             $customer->delete();
-        });
+        }, 3);
 
         return back()->with(
             'success',
@@ -459,6 +499,8 @@ class CustomerController extends Controller
         ?int $customerId = null
     ): array {
         return $request->validate([
+            'delivery_pin_required' => ['sometimes', 'required', 'boolean'],
+            'status' => ['sometimes', 'required', 'integer', Rule::in([0, 1, 2])],
             'name' => [
                 'required',
                 'string',
@@ -587,7 +629,7 @@ class CustomerController extends Controller
             ],
 
             'subscription_items.*.product_id' => [
-                'nullable',
+                'nullable', 'distinct',
                 Rule::exists(
                     'products',
                     'id'
@@ -603,13 +645,13 @@ class CustomerController extends Controller
             'subscription_items.*.quantity' => [
                 'nullable',
                 'numeric',
-                'min:0.001',
+                'min:0.001', 'max:999999.999', 'decimal:0,3',
             ],
 
             'subscription_items.*.rate' => [
                 'nullable',
                 'numeric',
-                'min:0',
+                'min:0', 'max:9999999.99', 'decimal:0,2',
             ],
         ]);
     }
@@ -621,6 +663,7 @@ class CustomerController extends Controller
     ): void {
         CustomerAddress::updateOrCreate(
             [
+                'client_id' => $clientId,
                 'customer_id' => $customer->id,
                 'is_default' => 1,
             ],
@@ -667,7 +710,7 @@ class CustomerController extends Controller
         array $validated,
         int $clientId
     ): void {
-        DB::table('delivery_route_customers')
+        DB::table('delivery_route_customers')->where('client_id', $clientId)
             ->where(
                 'customer_id',
                 $customer->id
@@ -777,7 +820,7 @@ class CustomerController extends Controller
 
         if ($items->isEmpty()) {
             if ($subscription) {
-                $subscription->items()->delete();
+                $subscription->items()->update(['default_quantity' => 0]);
             }
 
             return;
@@ -808,10 +851,11 @@ class CustomerController extends Controller
                 ]);
         }
 
-        $subscription->items()->delete();
+        $retained = $items->pluck('product_id')->all();
+        $subscription->items()->whereNotIn('product_id', $retained)->update(['default_quantity' => 0]);
 
         foreach ($items as $item) {
-            $subscription->items()->create([
+            $subscription->items()->updateOrCreate(['product_id' => $item['product_id']], [
                 'client_id' => $clientId,
 
                 'product_id' =>

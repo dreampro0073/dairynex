@@ -18,6 +18,11 @@ class Subscription extends Model
         'notes',
     ];
 
+    public function pauses()
+    {
+        return $this->hasMany(SubscriptionPause::class);
+    }
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

@@ -41,8 +41,32 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'client_id' => 'integer',
+            'user_type_id' => 'integer',
+            'status' => 'integer',
+            'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
+
+    public function role(): ?\App\Enums\Role
+    {
+        return \App\Enums\Role::tryFrom((int) $this->user_type_id);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+    public function canSignIn(): bool
+    {
+        if ((int) $this->status !== 1 || $this->role() === null || empty($this->password)) {
+            return false;
+        }
+
+        return $this->role() === \App\Enums\Role::SuperAdmin
+            || ($this->client_id && (int) $this->client?->status === 1);
+    }
+
 }

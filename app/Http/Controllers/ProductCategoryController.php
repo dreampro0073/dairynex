@@ -11,10 +11,7 @@ class ProductCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        // Filhaal example:
-        // Isko baad me authenticated user's client_id se replace karenge.
-        // $clientId = auth()->user()->client_id;
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         $categories = ProductCategory::query()
             ->where('client_id', $clientId)
@@ -35,8 +32,7 @@ class ProductCategoryController extends Controller
 
     public function store(Request $request)
     {
-        // $clientId = auth()->user()->client_id;
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         $validated = $request->validate([
             'name' => [
@@ -64,8 +60,7 @@ class ProductCategoryController extends Controller
 
     public function update(Request $request, ProductCategory $category)
     {
-        // $clientId = auth()->user()->client_id;
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless($category->client_id === $clientId, 403);
 
@@ -92,8 +87,7 @@ class ProductCategoryController extends Controller
 
     public function destroy(ProductCategory $category)
     {
-        // $clientId = auth()->user()->client_id;
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless($category->client_id === $clientId, 403);
 

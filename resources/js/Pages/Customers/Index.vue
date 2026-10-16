@@ -141,7 +141,7 @@ const deleteCustomer = (customer) => {
 
 		    <div class="stat danger">
 		        <div class="label">
-		            Overdue Balance
+		            Customers with Balance
 		        </div>
 
 		        <div class="value">
@@ -218,6 +218,7 @@ const deleteCustomer = (customer) => {
 
                             <td>
                                 {{ customer.today_qty }}
+                                <div class="meta">PIN {{ customer.delivery_pin_required ? 'enabled' : 'disabled' }}</div>
                             </td>
 
                             <td>
@@ -246,6 +247,7 @@ const deleteCustomer = (customer) => {
                             </td>
 
                             <td>
+                                <Link :href="`/customers/${customer.id}`" class="link">View</Link> ·
                                 <Link
                                     :href="
                                         `/customers/${customer.id}/edit`

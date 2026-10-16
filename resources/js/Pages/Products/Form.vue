@@ -4,6 +4,7 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 
 const props = defineProps({
+    rates: { type: Array, default: () => [] },
     product: {
         type: Object,
         default: null,
@@ -14,6 +15,8 @@ const props = defineProps({
         default: () => [],
     },
 })
+
+const rate = useForm({ rate: '', effective_from: '' })
 
 const isEdit = computed(() => Boolean(props.product))
 
@@ -250,5 +253,15 @@ const submit = () => {
                 }}
             </button>
         </form>
+        <section v-if="product" class="panel">
+            <div class="panel-head"><h3>Rate History</h3></div>
+            <div class="table-scroll"><table><thead><tr><th>Effective from</th><th>Rate</th></tr></thead><tbody><tr v-for="entry in rates" :key="entry.id"><td>{{ entry.effective_from }}</td><td>₹{{ entry.rate }}</td></tr><tr v-if="!rates.length"><td colspan="2">No historical rates recorded.</td></tr></tbody></table></div>
+            <form class="form-grid" @submit.prevent="rate.post(`/products/${product.id}/rates`)">
+                <div class="field"><label for="future-rate">Future rate</label><input id="future-rate" v-model="rate.rate" type="number" min="0" step="0.01" required></div>
+                <div class="field"><label for="future-rate-date">Effective from</label><input id="future-rate-date" v-model="rate.effective_from" type="date" required></div>
+                <div class="field"><button class="btn secondary" :disabled="rate.processing">Schedule rate</button></div>
+                <p v-if="Object.keys(rate.errors).length" class="error-text">{{ Object.values(rate.errors).join(' ') }}</p>
+            </form>
+        </section>
     </AdminLayout>
 </template>

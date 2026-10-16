@@ -17,6 +17,7 @@ class Product extends Model
     ];
 
     protected $casts = [
+        'client_id' => 'integer',
         'base_rate' => 'decimal:2',
         'status' => 'integer',
         'unit_type' => 'integer',

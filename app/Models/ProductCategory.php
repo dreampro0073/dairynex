@@ -16,6 +16,7 @@ class ProductCategory extends Model
     ];
 
     protected $casts = [
+        'client_id' => 'integer',
         'status' => 'integer',
     ];
 

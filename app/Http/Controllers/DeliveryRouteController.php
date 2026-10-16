@@ -12,17 +12,15 @@ class DeliveryRouteController extends Controller
 {
     public function index()
     {
-        // Baad me:
-        // $clientId = auth()->user()->client_id;
 
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         $routes = DeliveryRoute::query()
             ->where('client_id', $clientId)
             ->with([
-                'deliveryBoy:id,name',
+                'deliveryBoy' => fn ($query) => $query->where('client_id', $clientId)->where('user_type_id', \App\Enums\Role::DeliveryBoy->value)->select('id', 'name'),
             ])
-            ->withCount('customers')
+            ->withCount(['customers' => fn ($query) => $query->where('customers.client_id', $clientId)])
             ->latest('id')
             ->get()
             ->map(function ($route) {
@@ -84,13 +82,7 @@ class DeliveryRouteController extends Controller
 
     public function create()
     {
-        $deliveryBoys = \App\Models\User::query()
-            ->where('user_type_id', 3)
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-            ]);
+        $deliveryBoys = $this->deliveryBoys(\App\Support\Tenant::id());
 
         return Inertia::render('Routes/Form', [
             'deliveryRoute' => null,
@@ -100,7 +92,7 @@ class DeliveryRouteController extends Controller
 
     public function store(Request $request)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         $validated = $this->validateRoute(
             $request,
@@ -139,20 +131,14 @@ class DeliveryRouteController extends Controller
 
     public function edit(DeliveryRoute $deliveryRoute)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             (int) $deliveryRoute->client_id === $clientId,
             403
         );
 
-        $deliveryBoys = \App\Models\User::query()
-            ->where('user_type_id', 3)
-            ->orderBy('name')
-            ->get([
-                'id',
-                'name',
-            ]);
+        $deliveryBoys = $this->deliveryBoys($clientId);
 
         return Inertia::render('Routes/Form', [
             'deliveryRoute' => [
@@ -172,7 +158,7 @@ class DeliveryRouteController extends Controller
         Request $request,
         DeliveryRoute $deliveryRoute
     ) {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             $deliveryRoute->client_id === $clientId,
@@ -215,7 +201,7 @@ class DeliveryRouteController extends Controller
 
     public function destroy(DeliveryRoute $deliveryRoute)
     {
-        $clientId = 1;
+        $clientId = \App\Support\Tenant::id();
 
         abort_unless(
             $deliveryRoute->client_id === $clientId,
@@ -231,6 +217,10 @@ class DeliveryRouteController extends Controller
                 'delete' =>
                     'Customers are assigned to this route. Route cannot be deleted.',
             ]);
+        }
+
+        if (\Illuminate\Support\Facades\DB::table('deliveries')->where('route_id', $deliveryRoute->id)->exists()) {
+            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
         }
 
         $deliveryRoute->delete();
@@ -266,10 +256,7 @@ class DeliveryRouteController extends Controller
                     ->ignore($routeId),
             ],
 
-            /*
-             * Delivery Boy sirf users table se
-             * jiska user_type_id = 3 hai.
-             */
+// Restrict assignment to active delivery staff in the current dairy.
             'delivery_boy_id' => [
                 'required',
 
@@ -278,8 +265,8 @@ class DeliveryRouteController extends Controller
                         fn ($query) =>
                             $query->where(
                                 'user_type_id',
-                                3
-                            )
+                                \App\Enums\Role::DeliveryBoy->value
+                            )->where('client_id', $clientId)->where('status', 1)
                     ),
             ],
 
@@ -312,11 +299,8 @@ class DeliveryRouteController extends Controller
     {
         return User::query()
 
-            /*
-             * IMPORTANT:
-             * user_type_id = 3 means Delivery Boy
-             */
-            ->where('user_type_id', 3)
+// Preserve the SQL reference ID for delivery staff.
+            ->where('user_type_id', \App\Enums\Role::DeliveryBoy->value)
 
             /*
              * Agar users table me client_id hai
