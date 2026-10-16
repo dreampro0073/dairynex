@@ -46,6 +46,8 @@ class User extends Authenticatable
             'status' => 'integer',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
+            'temporary_password_expires_at' => 'datetime',
         ];
     }
 
@@ -62,6 +64,10 @@ class User extends Authenticatable
     public function canSignIn(): bool
     {
         if ((int) $this->status !== 1 || $this->role() === null || empty($this->password)) {
+            return false;
+        }
+
+        if ($this->must_change_password && $this->temporary_password_expires_at?->isPast()) {
             return false;
         }
 

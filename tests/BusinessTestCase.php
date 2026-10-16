@@ -15,6 +15,7 @@ abstract class BusinessTestCase extends TestCase
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         DB::unprepared(file_get_contents(base_path('tests/Fixtures/dairynex-schema.sqlite.sql')));
         (require database_path('migrations/daatabase_migrations.php'))->up();
+        (require database_path('migrations/daatabase_super_admin.php'))->up();
         $this->seed(\Database\Seeders\ReferenceDataSeeder::class);
         DB::table('clients')->insert([
             ['id' => 1, 'name' => 'Dairy One', 'status' => 1],

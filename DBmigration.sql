@@ -676,3 +676,41 @@ CREATE TABLE IF NOT EXISTS failed_jobs (id BIGINT UNSIGNED AUTO_INCREMENT PRIMAR
 -- Earlier SQL sections remain historical references and are now implemented by
 -- daatabase_migrations.php. Do not replay already applied SQL or alter old history rows.
 -- Run php artisan migrate normally; existing structures are checked before changes.
+
+-- 2026-10-16: database/migrations/daatabase_super_admin.php
+-- Append-only review reference. Laravel migration is authoritative and checks
+-- columns/tables before adding them. Do not replay ALTERs already applied.
+ALTER TABLE users ADD must_change_password TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE users ADD temporary_password_expires_at TIMESTAMP NULL;
+ALTER TABLE client_subscriptions ADD monthly_price DECIMAL(12,2) NULL;
+UPDATE client_subscriptions SET monthly_price =
+    (SELECT monthly_price FROM plans WHERE plans.id = client_subscriptions.plan_id)
+    WHERE monthly_price IS NULL;
+
+CREATE TABLE IF NOT EXISTS saas_invoices (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id BIGINT UNSIGNED NOT NULL,
+    client_subscription_id BIGINT UNSIGNED NOT NULL UNIQUE,
+    plan_name VARCHAR(100) NOT NULL,
+    period_from DATE NOT NULL, period_to DATE NOT NULL, due_date DATE NOT NULL,
+    amount DECIMAL(12,2) NOT NULL, paid_at TIMESTAMP NULL,
+    payment_reference VARCHAR(150) NULL,
+    created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL,
+    INDEX saas_invoices_client_id_index (client_id),
+    INDEX saas_invoices_due_date_index (due_date)
+);
+CREATE TABLE IF NOT EXISTS platform_settings (
+    `key` VARCHAR(255) PRIMARY KEY, value TEXT NULL,
+    created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL
+);
+CREATE TABLE IF NOT EXISTS support_tickets (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    client_id BIGINT UNSIGNED NOT NULL,
+    subject VARCHAR(200) NOT NULL, description TEXT NOT NULL,
+    priority VARCHAR(10) NOT NULL DEFAULT 'medium',
+    status VARCHAR(15) NOT NULL DEFAULT 'open', resolution TEXT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NULL, updated_at TIMESTAMP NULL,
+    INDEX support_tickets_client_id_index (client_id),
+    INDEX support_tickets_status_index (status)
+);

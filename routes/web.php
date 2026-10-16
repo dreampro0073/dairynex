@@ -106,6 +106,7 @@ Route::delete(
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/platform.php';
 
 Route::middleware(['auth', 'auth.session', 'account'])->group(function () {
     Route::get('/deliveries/{id}', [\App\Http\Controllers\DeliveryController::class, 'show'])->whereNumber('id')->name('deliveries.show');

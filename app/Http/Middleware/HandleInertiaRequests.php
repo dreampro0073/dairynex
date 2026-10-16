@@ -37,6 +37,7 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
+            'platform' => fn () => collect(\App\Support\PlatformSettings::values())->only(['platform_name', 'support_email', 'currency', 'timezone', 'notice'])->all(),
             'auth' => [
                 'user' => fn () => $request->user() ? [
                     'id' => $request->user()->id,

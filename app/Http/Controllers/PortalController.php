@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -11,19 +10,7 @@ class PortalController extends Controller
 {
     public function platform()
     {
-        return Inertia::render('Portals/Overview', [
-            'title' => 'Platform Overview',
-            'metrics' => [
-                'Total dairies' => Client::count(),
-                'Active dairies' => Client::where('status', 1)->count(),
-                'Other dairies' => Client::where('status', '!=', 1)->count(),
-            ],
-            'records' => Client::orderBy('name')->paginate(20)->through(fn ($client) => [
-                'id' => $client->id, 'name' => $client->name,
-                'detail' => (int) $client->status === 1 ? 'Active' : 'Inactive',
-            ]),
-            'notice' => 'Dairy account management and SaaS plan workflows are pending.',
-        ]);
+        return redirect()->route('platform.dashboard');
     }
 
     public function delivery(Request $request)

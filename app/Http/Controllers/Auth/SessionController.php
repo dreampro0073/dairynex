@@ -12,21 +12,21 @@ use Inertia\Inertia;
 
 class SessionController extends Controller
 {
-    public function create()
+    public function create(Request $request)
     {
-        return Inertia::render('Auth/Login');
+        return Inertia::render('Auth/Login', ['clientId' => ctype_digit((string) $request->query('client_id', '')) ? $request->integer('client_id') : null]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'mobile' => ['required', 'string', 'max:20'],
+            'mobile' => ['required', 'string', 'max:150'],
             'client_id' => ['nullable', 'integer', 'min:1'],
             'password' => ['required', 'string', 'max:255'],
         ]);
 
         // The dairy ID disambiguates credentials; it never establishes authorization.
-        $users = User::where('mobile', $data['mobile'])
+        $users = User::where(fn ($q) => $q->where('mobile', $data['mobile'])->orWhere('email', $data['mobile']))
             ->when($data['client_id'] ?? null,
                 fn ($query, $id) => $query->where('client_id', $id))
             ->limit(2)->get();
@@ -39,14 +39,14 @@ class SessionController extends Controller
         }
 
         if (!$valid) {
-            throw ValidationException::withMessages(['mobile' => 'Unable to sign in. Check your dairy ID, mobile and password, or contact your administrator.']);
+            throw ValidationException::withMessages(['mobile' => 'Unable to sign in. Check your dairy ID, email/mobile and password, or contact your administrator.']);
         }
 
         Auth::login($user);
         $request->session()->regenerate();
         $user->forceFill(['last_login_at' => now()])->save();
 
-        return redirect($user->role()->home());
+        return redirect($user->must_change_password ? '/change-password' : $user->role()->home());
     }
 
     public function destroy(Request $request)

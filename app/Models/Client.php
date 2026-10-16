@@ -17,4 +17,24 @@ class Client extends Model
     protected $casts = [
         'status' => 'integer',
     ];
+
+    public function admins()
+    {
+        return $this->hasMany(User::class)->where('user_type_id', \App\Enums\Role::ClientAdmin->value);
+    }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function deliveryBoys()
+    {
+        return $this->hasMany(User::class)->where('user_type_id', \App\Enums\Role::DeliveryBoy->value);
+    }
+
+    public function currentSubscription()
+    {
+        return $this->hasOne(ClientSubscription::class)->ofMany(['id' => 'max'], fn ($q) => $q->current());
+    }
 }

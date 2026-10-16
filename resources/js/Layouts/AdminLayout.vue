@@ -256,6 +256,7 @@ const closeSidebar = () => {
 
                 <section class="content">
                     <div class="content-inner">
+                        <div v-if="page.props.platform?.notice" class="alert alert-info" style="white-space: pre-wrap" role="status">{{ page.props.platform.notice }}</div>
                         <div v-if="page.props.flash?.success" class="alert alert-success" role="status">{{ page.props.flash.success }}</div>
                         <div v-if="page.props.flash?.error" class="alert alert-danger" role="alert">{{ page.props.flash.error }}</div>
                         <div v-if="page.props.errors?.delete" class="alert alert-danger" role="alert">{{ page.props.errors.delete }}</div>

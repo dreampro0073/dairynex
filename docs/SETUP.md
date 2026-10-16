@@ -34,7 +34,7 @@ Fresh installs seed no accounts. An authorized operator can create a platform Su
 php artisan dairynex:create-admin
 ```
 
-To create a Client Admin for an existing active dairy, use `php artisan dairynex:create-admin --client=DAIRY_ID`. The command prompts for name/mobile/email and privately prompts for a confirmed password of at least 12 characters. No credentials are accepted as command arguments or stored in output/audit metadata. New dairy/plan lifecycle management is still a required next phase; imported dairies can be used now.
+To create a Client Admin for an existing active dairy, use `php artisan dairynex:create-admin --client=DAIRY_ID`. The command prompts for name/mobile/email and privately prompts for a confirmed password of at least 12 characters. No credentials are accepted as command arguments or stored in output/audit metadata. Dairy/plan lifecycle management is available in the Super Admin console at `/platform`; see [Super Admin operations](SUPER_ADMIN.md).
 
 To explicitly provision an existing legacy account, retaining its ID and relationships:
 
@@ -44,7 +44,7 @@ php artisan dairynex:provision USER_ID --role=client_admin
 
 Choose a verified existing ID and supported role (super_admin/client_admin/delivery_boy/customer). No account was automatically promoted. Tenant accounts require an existing active dairy.
 
-Sign in at `/login` with mobile/password. Supply Dairy ID when a mobile belongs to more than one dairy. Dairy ID selects a credential candidate; authorization always comes from the authenticated user's record. Inactive accounts/dairies and unsupported roles are denied. Password changes invalidate authenticated sessions on the next protected request.
+Sign in at `/login` with email or mobile and password. Supply Dairy ID when an identity belongs to more than one dairy. Dairy ID selects a credential candidate; authorization always comes from the authenticated user's record. Inactive accounts/dairies and unsupported roles are denied. Password changes invalidate authenticated sessions on the next protected request.
 
 ## Customer login and PIN policy
 
@@ -78,7 +78,7 @@ Payments credit the account immediately but reduce invoice due only through expl
 
 `/notifications` lists and marks read only the recipient's own notices. Receipt, invoice and quantity-decision notices are implemented. Additional scheduled events remain pending. No external SMS/WhatsApp provider was assumed.
 
-Admin dashboard now aggregates actual delivery states, collections, ledger balances, recent activity, product sales and payment methods. Delivery/customer portals show only their authorized deliveries. Customer portal navigation includes subscriptions, ledger, invoices and notices. Super Admin still has a limited read-only overview; lifecycle management and full reports remain pending.
+Admin dashboard now aggregates actual delivery states, collections, ledger balances, recent activity, product sales and payment methods. Delivery/customer portals show only their authorized deliveries. Customer portal navigation includes subscriptions, ledger, invoices and notices. Super Admin now has client and administrator management, temporary credential resets, SaaS plans/subscriptions/billing, usage exports, support tickets and platform settings. See [Super Admin operations](SUPER_ADMIN.md) for policies, verification and infrastructure boundaries.
 
 ## Email resets
 
@@ -88,8 +88,8 @@ Configure a real email transport to deliver password resets. Log mailer reset de
 
 `php artisan test` uses a forced SQLite memory connection. Tests cover fresh/imported migration paths, authentication/roles/tenancy, customer identity, schedules/pauses/approvals, generation deduplication, actual vs planned quantities, PIN ON/OFF/attempts/ownership, ledger/payment accuracy and retries, invoice calculations/allocation, rates and notification privacy.
 
-MySQL execution/concurrency, rendered desktop/mobile QA and actual email delivery remain unverified. PHP 8.5 produces preexisting PDO::MYSQL_ATTR_SSL_CA deprecation notices in Laravel/framework and database configuration. Vendor files were not edited.
+MySQL execution/concurrency and actual email delivery remain unverified. Super Admin desktop/mobile rendering and credential flows were verified with isolated browser QA. PHP 8.5 produces preexisting PDO::MYSQL_ATTR_SSL_CA deprecation notices in Laravel/framework and database configuration. Vendor files were not edited.
 
-Inventory/stock consumption, walk-in sales, installment plans, Super Admin management, full reporting/settings, comprehensive core-list server pagination, multiple addresses/profiles and financial corrections remain required. See the master audit for the exact partial/pending coverage.
+Inventory/stock consumption, walk-in sales, installment plans, tenant reporting/settings, comprehensive core-list server pagination, multiple addresses/profiles and financial corrections remain required. See the master audit for the exact partial/pending coverage.
 
-Latest executed checks: 52 tests / 535 assertions / zero failures (preexisting PHP deprecation notices), successful production build, 75 PHP files with no syntax errors, 64 discoverable routes and a clean diff whitespace check. See the audit for remaining acceptance criteria.
+Latest Super Admin validation is recorded in [Super Admin operations](SUPER_ADMIN.md), including regression tests, production build, syntax checks and desktop/mobile browser coverage. See the audit for remaining acceptance criteria.
