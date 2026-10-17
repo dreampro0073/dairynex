@@ -111,7 +111,7 @@ class TenantIsolationTest extends BusinessTestCase
         foreach ([$boy, $other] as $assigned) {
             DB::table('deliveries')->insert(['client_id' => 1, 'customer_id' => $customer->id, 'delivery_boy_id' => $assigned->id, 'delivery_date' => today(), 'route_id' => 1, 'status_id' => 1, 'total_amount' => 50]);
         }
-        $this->actingAs($boy)->get('/delivery')->assertInertia(fn (AssertableInertia $page) => $page->has('deliveries.data', 1));
+        $this->actingAs($boy)->get('/delivery')->assertOk()->assertInertia(fn (AssertableInertia $page) => $page->component('Portals/Delivery')->has('deliveries', 1));
         $this->get('/platform')->assertForbidden();
         $this->get('/customer')->assertForbidden();
         $this->flushSession();

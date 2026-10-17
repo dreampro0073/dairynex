@@ -142,6 +142,16 @@ const closeSidebar = () => {
                         Deliveries
                     </Link>
 
+                    <Link href="/quick-sale" class="nav-item" :class="{ current: isActive('/quick-sale') }">
+                        <span class="ic"><i class="bi bi-cart-plus"></i></span> Quick Sale
+                    </Link>
+                    <Link href="/walk-in-sales" class="nav-item" :class="{ current: isActive('/walk-in-sales') }">
+                        <span class="ic"><i class="bi bi-receipt-cutoff"></i></span> Walk-in Sales
+                    </Link>
+                    <Link href="/daily-sales-report" class="nav-item" :class="{ current: isActive('/daily-sales-report') }">
+                        <span class="ic"><i class="bi bi-bar-chart-line"></i></span> Daily Sales Report
+                    </Link>
+
                     <Link
                         href="/routes"
                         class="nav-item"

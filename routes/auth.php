@@ -15,8 +15,8 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [SessionController::class, 'destroy'])->middleware('auth')->name('logout');
 Route::middleware(['auth', 'auth.session'])->group(function () {
-    Route::get('/delivery', [\App\Http\Controllers\DeliveryController::class, 'index'])->middleware('account:delivery_boy')->name('delivery.dashboard');
-    Route::get('/customer', [\App\Http\Controllers\DeliveryController::class, 'index'])->middleware('account:customer')->name('customer.dashboard');
+    Route::get('/delivery', [\App\Http\Controllers\PortalController::class, 'delivery'])->middleware('account:delivery_boy')->name('delivery.dashboard');
+    Route::get('/customer', [\App\Http\Controllers\PortalController::class, 'customer'])->middleware('account:customer')->name('customer.dashboard');
 });
 
 Route::middleware(['auth', 'auth.session', 'account'])->group(function () {

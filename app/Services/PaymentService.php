@@ -40,6 +40,7 @@ class PaymentService
             }
             $id = DB::table('payments')->insertGetId(['client_id' => $actor->client_id, 'customer_id' => $customer->id, 'payment_no' => $number,
                 'amount' => Decimal::format($amount), 'payment_method_id' => $data['payment_method_id'], 'transaction_reference' => $data['transaction_reference'] ?? null,
+                'notes' => $data['notes'] ?? null,
                 'payment_date' => now(), 'collected_by_user_id' => $actor->id, 'status' => 1, 'created_at' => now(), 'updated_at' => now()]);
             app(LedgerService::class)->post($customer, 'payment', $id, 0, $amount, $actor->id);
             DB::table('audit_logs')->insert(['client_id' => $actor->client_id, 'user_id' => $actor->id, 'action' => 'payment_recorded', 'table_name' => 'payments', 'record_id' => $id,

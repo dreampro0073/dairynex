@@ -28,7 +28,7 @@ class LedgerService
         $balance = $this->balance($customer) + $debit - $credit;
         DB::table('customer_ledger')->insert([
             'client_id' => $customer->client_id, 'customer_id' => $customer->id,
-            'transaction_type_id' => $reference === 'delivery' ? 3 : 8,
+            'transaction_type_id' => $reference === 'delivery' ? 3 : ($reference === 'walk_in_sale' ? 2 : 8),
             'reference_type' => $reference, 'reference_id' => $referenceId,
             'transaction_date' => now(), 'debit' => Decimal::format($debit), 'credit' => Decimal::format($credit),
             'balance' => Decimal::format($balance), 'description' => ucfirst($reference).' #'.$referenceId,

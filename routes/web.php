@@ -13,6 +13,11 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'auth.session', 'account:client_admin'])->group(function () {
+Route::get('/quick-sale', [\App\Http\Controllers\WalkInSaleController::class, 'quick'])->name('walk-in.quick');
+Route::post('/walk-in-sales', [\App\Http\Controllers\WalkInSaleController::class, 'store'])->name('walk-in.store');
+Route::get('/walk-in-sales', [\App\Http\Controllers\WalkInSaleController::class, 'index'])->name('walk-in.index');
+Route::get('/daily-sales-report', [\App\Http\Controllers\WalkInSaleController::class, 'report'])->name('walk-in.report');
+Route::get('/walk-in-sales/{id}', [\App\Http\Controllers\WalkInSaleController::class, 'show'])->whereNumber('id')->name('walk-in.show');
 Route::get('/deliveries', [\App\Http\Controllers\DeliveryController::class, 'index'])->name('deliveries.index');
 Route::post('/deliveries/generate', [\App\Http\Controllers\DeliveryController::class, 'generate'])->name('deliveries.generate');
 Route::post('/customers/{customer}/login', [\App\Http\Controllers\CustomerLoginController::class, 'store'])->name('customers.login');
