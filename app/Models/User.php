@@ -3,14 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    /** @use HasFactory<UserFactory> */
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -51,9 +54,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function role(): ?\App\Enums\Role
+    public function role(): ?Role
     {
-        return \App\Enums\Role::tryFrom((int) $this->user_type_id);
+        return Role::tryFrom((int) $this->user_type_id);
     }
 
     public function client()
@@ -71,8 +74,7 @@ class User extends Authenticatable
             return false;
         }
 
-        return $this->role() === \App\Enums\Role::SuperAdmin
+        return $this->role() === Role::SuperAdmin
             || ($this->client_id && (int) $this->client?->status === 1);
     }
-
 }

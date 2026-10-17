@@ -14,7 +14,7 @@ const page = usePage()
     </main>
 </template>
 <style scoped>
-.auth-shell { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
+.auth-shell { min-height: 100vh; min-height: var(--app-viewport-height, 100dvh); display: grid; place-items: center; padding: 24px 16px; background: var(--bg); }
 .auth-panel { width: 100%; max-width: 440px; padding: 24px; }
 .auth-panel :deep(.field) { margin-bottom: 16px; }
 .auth-panel :deep(.btn) { margin: 8px 0; }

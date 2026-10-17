@@ -2,6 +2,7 @@ import '../css/app.css';
 import '../css/admin.css'
 
 import 'bootstrap-icons/font/bootstrap-icons.css'
+import { installKeyboardViewport } from './bootstrap/keyboardViewport'
 
 // import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
@@ -31,3 +32,5 @@ createInertiaApp({
         color: '#4B5563',
     },
 });
+
+installKeyboardViewport()

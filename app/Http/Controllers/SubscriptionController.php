@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
-use App\Models\Client;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Services\SubscriptionService;
 use App\Support\Tenant;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -22,11 +20,14 @@ class SubscriptionController extends Controller
         $query = Subscription::where('client_id', $user->client_id);
         if ($user->role() === Role::Customer) {
             $query->whereIn('customer_id', Customer::where('client_id', $user->client_id)->where('user_id', $user->id)->select('id'));
-        } else { abort_unless($user->role() === Role::ClientAdmin, 403); }
+        } else {
+            abort_unless($user->role() === Role::ClientAdmin, 403);
+        }
+
         return Inertia::render('Subscriptions/Index', [
             'subscriptions' => $query->with(['customer' => fn ($q) => $q->where('client_id', $user->client_id)->select('id', 'name'),
                 'items' => fn ($q) => $q->where('client_id', $user->client_id), 'pauses' => fn ($q) => $q->where('client_id', $user->client_id)->orderByDesc('id'), 'items.product' => fn ($q) => $q->where('client_id', $user->client_id)->select('id', 'name')])
-                ->latest('id')->paginate(20)->through(function ($subscription) use ($user) {
+                ->latest('id')->paginate(20)->through(function ($subscription) {
                     return [...$subscription->only(['id', 'subscription_no', 'customer_id', 'start_date', 'end_date', 'status']),
                         'customer_name' => $subscription->customer?->name, 'items' => $subscription->items->map(fn ($item) => ['id' => $item->id, 'product_id' => $item->product_id, 'name' => $item->product?->name, 'quantity' => $item->default_quantity, 'rate' => $item->rate]),
                         'pauses' => $subscription->pauses->take(5)->map->only(['pause_from', 'pause_to', 'reason'])->values(),
@@ -38,7 +39,7 @@ class SubscriptionController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, SubscriptionService $subscriptions)
     {
         $client = Tenant::id();
         $data = $request->validate([
@@ -49,39 +50,18 @@ class SubscriptionController extends Controller
             'items.*.product_id' => ['required', 'integer', 'distinct', Rule::exists('products', 'id')->where(fn ($q) => $q->where('client_id', $client)->where('status', 1))],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001', 'max:999999.999', 'decimal:0,3'],
         ]);
-        DB::transaction(function () use ($data, $client) {
-            Client::lockForUpdate()->findOrFail($client);
-            abort_unless(Customer::where('client_id', $client)->where('status', 1)->where('id', $data['customer_id'])->exists(), 404);
-            $subscription = Subscription::create(['client_id' => $client, 'customer_id' => $data['customer_id'], 'subscription_no' => 'SUB-'.Str::uuid(),
-                'start_date' => $data['start_date'], 'end_date' => $data['end_date'] ?? null, 'status' => 1, 'auto_generate_deliveries' => 1]);
-            foreach ($data['items'] as $line) {
-                $product = Product::where('client_id', $client)->findOrFail($line['product_id']);
-                $item = $subscription->items()->create(['client_id' => $client, 'product_id' => $product->id, 'default_quantity' => $line['quantity'], 'rate' => $product->base_rate]);
-                foreach ($data['days'] as $day) {
-                    DB::table('subscription_schedules')->insert(['client_id' => $client, 'subscription_item_id' => $item->id, 'day_of_week' => $day,
-                        'delivery_slot_id' => $data['slot'], 'planned_quantity' => $line['quantity'], 'active_from' => $data['start_date'], 'active_to' => $data['end_date'] ?? null, 'created_at' => now(), 'updated_at' => now()]);
-                }
-            }
-        });
+        $subscriptions->create($request->user(), $data);
+
         return back()->with('success', 'Subscription and delivery schedule created.');
     }
 
-    public function pause(Request $request, int $id)
+    public function pause(Request $request, int $id, SubscriptionService $subscriptions)
     {
         $user = $request->user();
         abort_unless(in_array($user->role(), [Role::ClientAdmin, Role::Customer]), 403);
         $data = $request->validate(['pause_from' => ['required', 'date_format:Y-m-d', 'after:today'], 'pause_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:pause_from'], 'reason' => ['nullable', 'string', 'max:255']]);
-        DB::transaction(function () use ($user, $data, $id) {
-            Client::lockForUpdate()->findOrFail($user->client_id);
-            $subscription = Subscription::where('client_id', $user->client_id)->findOrFail($id);
-            if ($user->role() === Role::Customer) {
-                abort_unless(Customer::where('client_id', $user->client_id)->where('user_id', $user->id)->where('id', $subscription->customer_id)->exists(), 403);
-            }
-            DB::table('deliveries')->where('client_id', $user->client_id)->where('subscription_id', $id)
-                ->whereBetween('delivery_date', [$data['pause_from'], $data['pause_to']])->whereIn('status_id', [1, 2])
-                ->update(['status_id' => 5, 'notes' => 'Cancelled for scheduled subscription pause.', 'updated_at' => now()]);
-            DB::table('subscription_pauses')->insert(['client_id' => $user->client_id, 'subscription_id' => $id, ...$data, 'status' => 1, 'created_at' => now()]);
-        });
+        $subscriptions->pause($user, $id, $data);
+
         return back()->with('success', 'Pause scheduled. Supply resumes automatically after the end date. Pending deliveries in the pause period are cancelled without charge.');
     }
 }
