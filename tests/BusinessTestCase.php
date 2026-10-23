@@ -29,9 +29,13 @@ abstract class BusinessTestCase extends TestCase
     {
         $user = new User;
         $user->forceFill([
-            'name' => 'Account', 'mobile' => (string) random_int(7000000000, 9999999999),
-            'client_id' => $clientId, 'user_type_id' => $role instanceof Role ? $role->value : $role,
-            'status' => 1, 'password' => 'test-password-123', ...$attributes,
+            'name' => 'Account',
+            'mobile' => (string) random_int(7000000000, 9999999999),
+            'client_id' => $clientId,
+            'user_type_id' => $role instanceof Role ? $role->value : $role,
+            'status' => 1,
+            'password' => 'test-password-123',
+            ...$attributes,
         ])->save();
 
         return $user;

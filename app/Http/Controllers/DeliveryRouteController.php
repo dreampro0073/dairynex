@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\DeliveryRoute;
 use App\Models\User;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -13,12 +16,14 @@ class DeliveryRouteController extends Controller
     public function index()
     {
 
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         $routes = DeliveryRoute::query()
             ->where('client_id', $clientId)
             ->with([
-                'deliveryBoy' => fn ($query) => $query->where('client_id', $clientId)->where('user_type_id', \App\Enums\Role::DeliveryBoy->value)->select('id', 'name'),
+                'deliveryBoy' => fn ($query) => $query->where('client_id', $clientId)
+                    ->where('user_type_id', Role::DeliveryBoy->value)
+                    ->select('id', 'name'),
             ])
             ->withCount(['customers' => fn ($query) => $query->where('customers.client_id', $clientId)])
             ->latest('id')
@@ -39,25 +44,19 @@ class DeliveryRouteController extends Controller
                     'id' => $route->id,
                     'name' => $route->name,
 
-                    'area_locality' =>
-                        $route->area_locality,
+                    'area_locality' => $route->area_locality,
 
-                    'expected_stops' =>
-                        $route->expected_stops,
+                    'expected_stops' => $route->expected_stops,
 
-                    'customers_count' =>
-                        $route->customers_count,
+                    'customers_count' => $route->customers_count,
 
-                    'delivery_boy_id' =>
-                        $route->delivery_boy_id,
+                    'delivery_boy_id' => $route->delivery_boy_id,
 
-                    'delivery_boy' =>
-                        $route->deliveryBoy?->name ?? '-',
+                    'delivery_boy' => $route->deliveryBoy?->name ?? '-',
 
                     'status' => $route->status,
 
-                    'delivered_percentage' =>
-                        $deliveredPercentage,
+                    'delivered_percentage' => $deliveredPercentage,
                 ];
             });
 
@@ -74,15 +73,14 @@ class DeliveryRouteController extends Controller
                  * Customer assignments ko actual stops
                  * maana hai.
                  */
-                'stops_count' =>
-                    $routes->sum('customers_count'),
+                'stops_count' => $routes->sum('customers_count'),
             ],
         ]);
     }
 
     public function create()
     {
-        $deliveryBoys = $this->deliveryBoys(\App\Support\Tenant::id());
+        $deliveryBoys = $this->deliveryBoys(Tenant::id());
 
         return Inertia::render('Routes/Form', [
             'deliveryRoute' => null,
@@ -92,7 +90,7 @@ class DeliveryRouteController extends Controller
 
     public function store(Request $request)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         $validated = $this->validateRoute(
             $request,
@@ -102,23 +100,17 @@ class DeliveryRouteController extends Controller
         DeliveryRoute::create([
             'client_id' => $clientId,
 
-            'delivery_boy_id' =>
-                $validated['delivery_boy_id'],
+            'delivery_boy_id' => $validated['delivery_boy_id'],
 
-            'name' =>
-                $validated['name'],
+            'name' => $validated['name'],
 
-            'area_locality' =>
-                $validated['area_locality'] ?? null,
+            'area_locality' => $validated['area_locality'] ?? null,
 
-            'expected_stops' =>
-                $validated['expected_stops'] ?? 0,
+            'expected_stops' => $validated['expected_stops'] ?? 0,
 
-            'route_date' =>
-                $validated['route_date'] ?? null,
+            'route_date' => $validated['route_date'] ?? null,
 
-            'status' =>
-                $validated['status'],
+            'status' => $validated['status'],
         ]);
 
         return redirect()
@@ -131,7 +123,7 @@ class DeliveryRouteController extends Controller
 
     public function edit(DeliveryRoute $deliveryRoute)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             (int) $deliveryRoute->client_id === $clientId,
@@ -158,7 +150,7 @@ class DeliveryRouteController extends Controller
         Request $request,
         DeliveryRoute $deliveryRoute
     ) {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             $deliveryRoute->client_id === $clientId,
@@ -172,23 +164,17 @@ class DeliveryRouteController extends Controller
         );
 
         $deliveryRoute->update([
-            'delivery_boy_id' =>
-                $validated['delivery_boy_id'],
+            'delivery_boy_id' => $validated['delivery_boy_id'],
 
-            'name' =>
-                $validated['name'],
+            'name' => $validated['name'],
 
-            'area_locality' =>
-                $validated['area_locality'] ?? null,
+            'area_locality' => $validated['area_locality'] ?? null,
 
-            'expected_stops' =>
-                $validated['expected_stops'] ?? 0,
+            'expected_stops' => $validated['expected_stops'] ?? 0,
 
-            'route_date' =>
-                $validated['route_date'] ?? null,
+            'route_date' => $validated['route_date'] ?? null,
 
-            'status' =>
-                $validated['status'],
+            'status' => $validated['status'],
         ]);
 
         return redirect()
@@ -201,7 +187,7 @@ class DeliveryRouteController extends Controller
 
     public function destroy(DeliveryRoute $deliveryRoute)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             $deliveryRoute->client_id === $clientId,
@@ -214,13 +200,15 @@ class DeliveryRouteController extends Controller
          */
         if ($deliveryRoute->customers()->exists()) {
             return back()->withErrors([
-                'delete' =>
-                    'Customers are assigned to this route. Route cannot be deleted.',
+                'delete' => 'Customers are assigned to this route. Route cannot be deleted.',
             ]);
         }
 
-        if (\Illuminate\Support\Facades\DB::table('deliveries')->where('route_id', $deliveryRoute->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        if (DB::table('deliveries')->where('route_id', $deliveryRoute->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
 
         $deliveryRoute->delete();
@@ -247,26 +235,24 @@ class DeliveryRouteController extends Controller
                     'name'
                 )
                     ->where(
-                        fn ($query) =>
-                            $query->where(
-                                'client_id',
-                                $clientId
-                            )
+                        fn ($query) => $query->where(
+                            'client_id',
+                            $clientId
+                        )
                     )
                     ->ignore($routeId),
             ],
 
-// Restrict assignment to active delivery staff in the current dairy.
+            // Restrict assignment to active delivery staff in the current dairy.
             'delivery_boy_id' => [
                 'required',
 
                 Rule::exists('users', 'id')
                     ->where(
-                        fn ($query) =>
-                            $query->where(
-                                'user_type_id',
-                                \App\Enums\Role::DeliveryBoy->value
-                            )->where('client_id', $clientId)->where('status', 1)
+                        fn ($query) => $query->where(
+                            'user_type_id',
+                            Role::DeliveryBoy->value
+                        )->where('client_id', $clientId)->where('status', 1)
                     ),
             ],
 
@@ -300,7 +286,7 @@ class DeliveryRouteController extends Controller
         return User::query()
 
 // Preserve the SQL reference ID for delivery staff.
-            ->where('user_type_id', \App\Enums\Role::DeliveryBoy->value)
+            ->where('user_type_id', Role::DeliveryBoy->value)
 
             /*
              * Agar users table me client_id hai

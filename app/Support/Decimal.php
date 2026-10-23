@@ -9,9 +9,11 @@ final class Decimal
     public static function scaled(mixed $value, int $places, string $field = 'amount'): int
     {
         $value = (string) $value;
-        if (!preg_match('/^(-?)(\d{1,12})(?:\.(\d{1,'.$places.'}))?$/D', $value, $matches)) {
+
+        if (! preg_match('/^(-?)(\d{1,12})(?:\.(\d{1,'.$places.'}))?$/D', $value, $matches)) {
             throw ValidationException::withMessages([$field => "Use a valid decimal with at most {$places} decimal places."]);
         }
+
         return ($matches[1] === '-' ? -1 : 1) * ((int) $matches[2] * (10 ** $places) + (int) str_pad($matches[3] ?? '', $places, '0'));
     }
 
@@ -26,6 +28,7 @@ final class Decimal
         if ($quantity < 0 || $rate < 0 || $quantity > 999999999 || $rate > 999999999) {
             throw ValidationException::withMessages(['items' => 'Quantity or rate exceeds the supported range.']);
         }
+
         return intdiv($quantity * $rate + 500, 1000);
     }
 }

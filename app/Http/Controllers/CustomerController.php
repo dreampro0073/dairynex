@@ -2,118 +2,130 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
+use App\Models\Client;
 use App\Models\Customer;
 use App\Models\CustomerAddress;
 use App\Models\DeliveryRoute;
 use App\Models\Product;
 use App\Models\Subscription;
+use App\Models\User;
+use App\Support\Decimal;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
-        $movements = DB::table('customer_ledger')->where('client_id', $clientId)->selectRaw('customer_id, SUM(debit-credit) as movement')->groupBy('customer_id')->pluck('movement', 'customer_id');
+        $movements = DB::table('customer_ledger')
+            ->where('client_id', $clientId)
+            ->selectRaw('customer_id, SUM(debit-credit) as movement')
+            ->groupBy('customer_id')
+            ->pluck('movement', 'customer_id');
 
         $customers = Customer::query()
-        ->where('client_id', $clientId)
-        ->with([
-            'defaultAddress' => fn ($query) => $query->where('client_id', $clientId),
-            'routes' => fn ($query) => $query->where('delivery_routes.client_id', $clientId)->select('delivery_routes.id', 'name'),
-            'subscriptions' => fn ($query) => $query->where('client_id', $clientId),
-            'subscriptions.items' => fn ($query) => $query->where('client_id', $clientId),
-            'subscriptions.items.product' => fn ($query) => $query->where('client_id', $clientId)->select('id', 'name'),
-        ])
-        ->latest('id')
-        ->get()
-        ->map(function ($customer) use ($movements) {
-            $route = $customer->routes->first();
+            ->where('client_id', $clientId)
+            ->with([
+                'defaultAddress' => fn ($query) => $query->where('client_id', $clientId),
+                'routes' => fn ($query) => $query->where('delivery_routes.client_id', $clientId)
+                    ->select('delivery_routes.id', 'name'),
+                'subscriptions' => fn ($query) => $query->where('client_id', $clientId),
+                'subscriptions.items' => fn ($query) => $query->where('client_id', $clientId),
+                'subscriptions.items.product' => fn ($query) => $query->where('client_id', $clientId)
+                    ->select('id', 'name'),
+            ])
+            ->latest('id')
+            ->get()
+            ->map(function ($customer) use ($movements) {
+                $route = $customer->routes->first();
 
-            $subscription = $customer->subscriptions
-                ->where('status', 1)
-                ->first();
+                $subscription = $customer->subscriptions
+                    ->where('status', 1)
+                    ->first();
 
-            $todayQty = '-';
+                $todayQty = '-';
 
-            if ($subscription) {
-                $parts = [];
+                if ($subscription) {
+                    $parts = [];
 
-                foreach ($subscription->items as $item) {
-                    $qty = (float) $item->default_quantity;
+                    foreach ($subscription->items as $item) {
+                        $qty = (float) $item->default_quantity;
 
-                    $parts[] =
-                        $qty . ' ' . ($item->product?->name ?? '');
+                        $parts[] =
+                            $qty.' '.($item->product?->name ?? '');
+                    }
+
+                    $todayQty = count($parts)
+                        ? implode(' + ', $parts)
+                        : '-';
                 }
 
-                $todayQty = count($parts)
-                    ? implode(' + ', $parts)
-                    : '-';
-            }
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'delivery_pin_required' => $customer->delivery_pin_required,
+                    'mobile' => $customer->mobile,
 
-            return [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'delivery_pin_required' => $customer->delivery_pin_required,
-                'mobile' => $customer->mobile,
+                    'route_id' => $route?->id,
+                    'route' => $route?->name ?? '-',
 
-                'route_id' => $route?->id,
-                'route' => $route?->name ?? '-',
+                    'customer_type' => $customer->customer_type,
+                    'status' => $customer->status,
 
-                'customer_type' => $customer->customer_type,
-                'status' => $customer->status,
+                    'today_qty' => $todayQty,
 
-                'today_qty' => $todayQty,
+                    'outstanding' => (float) $customer->opening_balance + (float) ($movements[$customer->id] ?? 0),
+                ];
+            });
 
-                'outstanding' =>
-                    (float) $customer->opening_balance + (float) ($movements[$customer->id] ?? 0),
-            ];
-        });
+        $total = $customers->count();
 
-    $total = $customers->count();
+        $active = $customers
+            ->where('status', 1)
+            ->count();
 
-    $active = $customers
-        ->where('status', 1)
-        ->count();
+        $paused = $customers
+            ->where('status', 2)
+            ->count();
 
-    $paused = $customers
-        ->where('status', 2)
-        ->count();
+        $overdue = $customers
+            ->where('outstanding', '>', 0)
+            ->count();
 
-    $overdue = $customers
-        ->where('outstanding', '>', 0)
-        ->count();
+        $routeCount = $customers
+            ->pluck('route_id')
+            ->filter()
+            ->unique()
+            ->count();
 
-    $routeCount = $customers
-        ->pluck('route_id')
-        ->filter()
-        ->unique()
-        ->count();
+        $activePercentage = $total > 0
+            ? round(($active / $total) * 100)
+            : 0;
 
-    $activePercentage = $total > 0
-        ? round(($active / $total) * 100)
-        : 0;
+        return Inertia::render('Customers/Index', [
+            'customers' => $customers,
 
-    return Inertia::render('Customers/Index', [
-        'customers' => $customers,
-
-        'stats' => [
-            'total' => $total,
-            'active' => $active,
-            'paused' => $paused,
-            'overdue' => $overdue,
-            'routes' => $routeCount,
-            'active_percentage' => $activePercentage,
-        ],
-    ]);
+            'stats' => [
+                'total' => $total,
+                'active' => $active,
+                'paused' => $paused,
+                'overdue' => $overdue,
+                'routes' => $routeCount,
+                'active_percentage' => $activePercentage,
+            ],
+        ]);
     }
 
-    public function create(){
-        $clientId = \App\Support\Tenant::id();
+    public function create()
+    {
+        $clientId = Tenant::id();
 
         return Inertia::render('Customers/Form', [
             'customer' => null,
@@ -143,7 +155,7 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         $validated = $this->validateCustomer(
             $request,
@@ -154,7 +166,7 @@ class CustomerController extends Controller
             $validated,
             $clientId
         ) {
-            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
+            Client::lockForUpdate()->findOrFail($clientId);
             $customer = Customer::create([
                 'client_id' => $clientId,
 
@@ -167,29 +179,26 @@ class CustomerController extends Controller
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
 
-                'date_of_birth' =>
-                    $validated['date_of_birth'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
 
                 'gender' => $validated['gender'] ?? null,
 
-                'opening_balance' =>
-                    $validated['opening_balance'] ?? 0,
+                'opening_balance' => $validated['opening_balance'] ?? 0,
 
-                'credit_limit' =>
-                    $validated['credit_limit'] ?? 0,
+                'credit_limit' => $validated['credit_limit'] ?? 0,
 
-                'customer_type' =>
-                    $validated['customer_type'],
+                'customer_type' => $validated['customer_type'],
 
                 'status' => $validated['status'] ?? 1,
 
-                'supply_preference' =>
-                    $validated['supply_preference'],
+                'supply_preference' => $validated['supply_preference'],
             ]);
 
             DB::table('audit_logs')->insert([
-                'client_id' => $clientId, 'user_id' => auth()->id(),
-                'action' => 'customer_saved', 'table_name' => 'customers',
+                'client_id' => $clientId,
+                'user_id' => auth()->id(),
+                'action' => 'customer_saved',
+                'table_name' => 'customers',
                 'record_id' => $customer->id,
                 'new_values' => json_encode(['delivery_pin_required' => $customer->delivery_pin_required]),
                 'created_at' => now(),
@@ -231,7 +240,7 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
@@ -260,79 +269,60 @@ class CustomerController extends Controller
                 'mobile' => $customer->mobile,
                 'email' => $customer->email,
 
-                'date_of_birth' =>
-                    $customer->date_of_birth,
+                'date_of_birth' => $customer->date_of_birth,
 
                 'gender' => $customer->gender,
 
-                'customer_type' =>
-                    $customer->customer_type,
+                'customer_type' => $customer->customer_type,
 
-                'opening_balance' =>
-                    $customer->opening_balance,
+                'opening_balance' => $customer->opening_balance,
 
-                'credit_limit' =>
-                    $customer->credit_limit,
+                'credit_limit' => $customer->credit_limit,
 
-                'status' =>
-                    $customer->status,
+                'status' => $customer->status,
 
-                'supply_preference' =>
-                    $customer->supply_preference,
+                'supply_preference' => $customer->supply_preference,
 
-                'address_line1' =>
-                    $customer->defaultAddress
-                        ?->address_line1,
+                'address_line1' => $customer->defaultAddress
+                    ?->address_line1,
 
-                'address_line2' =>
-                    $customer->defaultAddress
-                        ?->address_line2,
+                'address_line2' => $customer->defaultAddress
+                    ?->address_line2,
 
-                'landmark' =>
-                    $customer->defaultAddress
-                        ?->landmark,
+                'landmark' => $customer->defaultAddress
+                    ?->landmark,
 
-                'city' =>
-                    $customer->defaultAddress
-                        ?->city,
+                'city' => $customer->defaultAddress
+                    ?->city,
 
-                'state' =>
-                    $customer->defaultAddress
-                        ?->state,
+                'state' => $customer->defaultAddress
+                    ?->state,
 
-                'pincode' =>
-                    $customer->defaultAddress
-                        ?->pincode,
+                'pincode' => $customer->defaultAddress
+                    ?->pincode,
 
-                'latitude' =>
-                    $customer->defaultAddress
-                        ?->latitude,
+                'latitude' => $customer->defaultAddress
+                    ?->latitude,
 
-                'longitude' =>
-                    $customer->defaultAddress
-                        ?->longitude,
+                'longitude' => $customer->defaultAddress
+                    ?->longitude,
 
-                'route_id' =>
-                    $customer->routes
-                        ->first()?->id,
+                'route_id' => $customer->routes
+                    ->first()?->id,
 
-                'subscription_items' =>
-                    $subscription
-                        ?->items
-                        ->map(fn ($item) => [
-                            'id' => $item->id,
+                'subscription_items' => $subscription
+                    ?->items
+                    ->map(fn ($item) => [
+                        'id' => $item->id,
 
-                            'product_id' =>
-                                $item->product_id,
+                        'product_id' => $item->product_id,
 
-                            'quantity' =>
-                                $item->default_quantity,
+                        'quantity' => $item->default_quantity,
 
-                            'rate' =>
-                                $item->rate,
-                        ])
-                        ->values()
-                        ->toArray()
+                        'rate' => $item->rate,
+                    ])
+                    ->values()
+                    ->toArray()
                     ?? [],
             ],
 
@@ -362,7 +352,7 @@ class CustomerController extends Controller
         Request $request,
         Customer $customer
     ) {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
@@ -374,6 +364,7 @@ class CustomerController extends Controller
             $clientId,
             $customer->id
         );
+
         $validated['delivery_pin_required'] ??= $customer->delivery_pin_required;
         $validated['status'] ??= $customer->status;
 
@@ -382,13 +373,20 @@ class CustomerController extends Controller
             $validated,
             $clientId
         ) {
-            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
+            Client::lockForUpdate()->findOrFail($clientId);
             $customer = Customer::where('client_id', $clientId)->lockForUpdate()->findOrFail($customer->id);
-        if (\App\Support\Decimal::scaled($validated['opening_balance'] ?? 0, 2) !== \App\Support\Decimal::scaled($customer->opening_balance ?? 0, 2)
-            && DB::table('customer_ledger')->where('client_id', $clientId)->where('customer_id', $customer->id)->exists()) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['opening_balance' => 'Opening balance cannot be changed after ledger activity. Use an authorized adjustment.']);
-        }
 
+            if (
+                Decimal::scaled($validated['opening_balance'] ?? 0, 2) !== Decimal::scaled($customer->opening_balance ?? 0, 2)
+                && DB::table('customer_ledger')
+                    ->where('client_id', $clientId)
+                    ->where('customer_id', $customer->id)
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'opening_balance' => 'Opening balance cannot be changed after ledger activity. Use an authorized adjustment.',
+                ]);
+            }
 
             $customer->update([
                 'status' => $validated['status'],
@@ -397,27 +395,24 @@ class CustomerController extends Controller
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
 
-                'date_of_birth' =>
-                    $validated['date_of_birth'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
 
                 'gender' => $validated['gender'] ?? null,
 
-                'opening_balance' =>
-                    $validated['opening_balance'] ?? 0,
+                'opening_balance' => $validated['opening_balance'] ?? 0,
 
-                'credit_limit' =>
-                    $validated['credit_limit'] ?? 0,
+                'credit_limit' => $validated['credit_limit'] ?? 0,
 
-                'customer_type' =>
-                    $validated['customer_type'],
+                'customer_type' => $validated['customer_type'],
 
-                'supply_preference' =>
-                    $validated['supply_preference'],
+                'supply_preference' => $validated['supply_preference'],
             ]);
 
             DB::table('audit_logs')->insert([
-                'client_id' => $clientId, 'user_id' => auth()->id(),
-                'action' => 'customer_saved', 'table_name' => 'customers',
+                'client_id' => $clientId,
+                'user_id' => auth()->id(),
+                'action' => 'customer_saved',
+                'table_name' => 'customers',
                 'record_id' => $customer->id,
                 'new_values' => json_encode(['delivery_pin_required' => $customer->delivery_pin_required]),
                 'created_at' => now(),
@@ -457,17 +452,22 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        abort_unless($customer->client_id === \App\Support\Tenant::id(), 403);
+        abort_unless($customer->client_id === Tenant::id(), 403);
+
         return Inertia::render('Customers/Show', [
             'customer' => $customer->only(['id', 'name', 'mobile', 'email', 'status', 'delivery_pin_required', 'user_id']),
-            'logins' => \App\Models\User::where('client_id', $customer->client_id)->where('user_type_id', \App\Enums\Role::Customer->value)->where('status', 1)
-                ->whereNotIn('id', Customer::whereNotNull('user_id')->select('user_id'))->get(['id', 'name', 'mobile']),
+            'logins' => User::where('client_id', $customer->client_id)
+                ->where('user_type_id', Role::Customer->value)
+                ->where('status', 1)
+                ->whereNotIn('id', Customer::whereNotNull('user_id')
+                    ->select('user_id'))
+                ->get(['id', 'name', 'mobile']),
         ]);
     }
 
     public function destroy(Customer $customer)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless(
             $customer->client_id === $clientId,
@@ -475,14 +475,20 @@ class CustomerController extends Controller
         );
 
         DB::transaction(function () use ($customer, $clientId) {
-            \App\Models\Client::lockForUpdate()->findOrFail($clientId);
+            Client::lockForUpdate()->findOrFail($clientId);
             $customer = Customer::where('client_id', $clientId)->lockForUpdate()->findOrFail($customer->id);
+
             foreach (['deliveries', 'customer_ledger', 'payments', 'invoices', 'payment_plans', 'subscriptions'] as $table) {
                 if (DB::table($table)->where('customer_id', $customer->id)->exists()) {
-                    throw \Illuminate\Validation\ValidationException::withMessages(['delete' => 'This customer has business history. Deactivate the customer instead.']);
+                    throw ValidationException::withMessages(['delete' => 'This customer has business history. Deactivate the customer instead.']);
                 }
             }
-            DB::table('delivery_route_customers')->where('client_id', $clientId)->where('customer_id', $customer->id)->delete();
+
+            DB::table('delivery_route_customers')
+                ->where('client_id', $clientId)
+                ->where('customer_id', $customer->id)
+                ->delete();
+
             $customer->addresses()->where('client_id', $clientId)->delete();
             $customer->delete();
         }, 3);
@@ -601,11 +607,10 @@ class CustomerController extends Controller
                     'delivery_routes',
                     'id'
                 )->where(
-                    fn ($query) =>
-                        $query->where(
-                            'client_id',
-                            $clientId
-                        )
+                    fn ($query) => $query->where(
+                        'client_id',
+                        $clientId
+                    )
                 ),
             ],
 
@@ -629,29 +634,33 @@ class CustomerController extends Controller
             ],
 
             'subscription_items.*.product_id' => [
-                'nullable', 'distinct',
+                'nullable',
+                'distinct',
                 Rule::exists(
                     'products',
                     'id'
                 )->where(
-                    fn ($query) =>
-                        $query->where(
-                            'client_id',
-                            $clientId
-                        )
+                    fn ($query) => $query->where(
+                        'client_id',
+                        $clientId
+                    )
                 ),
             ],
 
             'subscription_items.*.quantity' => [
                 'nullable',
                 'numeric',
-                'min:0.001', 'max:999999.999', 'decimal:0,3',
+                'min:0.001',
+                'max:999999.999',
+                'decimal:0,3',
             ],
 
             'subscription_items.*.rate' => [
                 'nullable',
                 'numeric',
-                'min:0', 'max:9999999.99', 'decimal:0,2',
+                'min:0',
+                'max:9999999.99',
+                'decimal:0,2',
             ],
         ]);
     }
@@ -671,35 +680,27 @@ class CustomerController extends Controller
                 'client_id' => $clientId,
                 'address_type' => 1,
 
-                'address_line1' =>
-                    $validated['address_line1'],
+                'address_line1' => $validated['address_line1'],
 
-                'address_line2' =>
-                    $validated['address_line2']
+                'address_line2' => $validated['address_line2']
                     ?? null,
 
-                'landmark' =>
-                    $validated['landmark']
+                'landmark' => $validated['landmark']
                     ?? null,
 
-                'city' =>
-                    $validated['city']
+                'city' => $validated['city']
                     ?? null,
 
-                'state' =>
-                    $validated['state']
+                'state' => $validated['state']
                     ?? null,
 
-                'pincode' =>
-                    $validated['pincode']
+                'pincode' => $validated['pincode']
                     ?? null,
 
-                'latitude' =>
-                    $validated['latitude']
+                'latitude' => $validated['latitude']
                     ?? null,
 
-                'longitude' =>
-                    $validated['longitude']
+                'longitude' => $validated['longitude']
                     ?? null,
             ]
         );
@@ -738,14 +739,11 @@ class CustomerController extends Controller
             ->insert([
                 'client_id' => $clientId,
 
-                'route_id' =>
-                    $validated['route_id'],
+                'route_id' => $validated['route_id'],
 
-                'customer_id' =>
-                    $customer->id,
+                'customer_id' => $customer->id,
 
-                'sequence_no' =>
-                    ((int) $lastSequence) + 1,
+                'sequence_no' => ((int) $lastSequence) + 1,
 
                 'created_at' => now(),
             ]);
@@ -760,8 +758,7 @@ class CustomerController extends Controller
             $validated['subscription_items']
             ?? []
         )->filter(
-            fn ($item) =>
-                !empty($item['product_id'])
+            fn ($item) => ! empty($item['product_id'])
         );
 
         if ($items->isEmpty()) {
@@ -772,10 +769,9 @@ class CustomerController extends Controller
             'client_id' => $clientId,
             'customer_id' => $customer->id,
 
-            'subscription_no' =>
-                $this->generateSubscriptionNo(
-                    $clientId
-                ),
+            'subscription_no' => $this->generateSubscriptionNo(
+                $clientId
+            ),
 
             'billing_cycle_id' => 1,
             'start_date' => now()->toDateString(),
@@ -787,14 +783,11 @@ class CustomerController extends Controller
             $subscription->items()->create([
                 'client_id' => $clientId,
 
-                'product_id' =>
-                    $item['product_id'],
+                'product_id' => $item['product_id'],
 
-                'default_quantity' =>
-                    $item['quantity'] ?? 1,
+                'default_quantity' => $item['quantity'] ?? 1,
 
-                'rate' =>
-                    $item['rate'] ?? 0,
+                'rate' => $item['rate'] ?? 0,
             ]);
         }
     }
@@ -808,8 +801,7 @@ class CustomerController extends Controller
             $validated['subscription_items']
             ?? []
         )->filter(
-            fn ($item) =>
-                !empty($item['product_id'])
+            fn ($item) => ! empty($item['product_id'])
         );
 
         $subscription = $customer
@@ -826,28 +818,24 @@ class CustomerController extends Controller
             return;
         }
 
-        if (!$subscription) {
+        if (! $subscription) {
             $subscription =
                 Subscription::create([
                     'client_id' => $clientId,
 
-                    'customer_id' =>
-                        $customer->id,
+                    'customer_id' => $customer->id,
 
-                    'subscription_no' =>
-                        $this
-                            ->generateSubscriptionNo(
-                                $clientId
-                            ),
+                    'subscription_no' => $this
+                        ->generateSubscriptionNo(
+                            $clientId
+                        ),
 
                     'billing_cycle_id' => 1,
-                    'start_date' =>
-                        now()->toDateString(),
+                    'start_date' => now()->toDateString(),
 
                     'status' => 1,
 
-                    'auto_generate_deliveries'
-                        => 1,
+                    'auto_generate_deliveries' => 1,
                 ]);
         }
 
@@ -858,14 +846,11 @@ class CustomerController extends Controller
             $subscription->items()->updateOrCreate(['product_id' => $item['product_id']], [
                 'client_id' => $clientId,
 
-                'product_id' =>
-                    $item['product_id'],
+                'product_id' => $item['product_id'],
 
-                'default_quantity' =>
-                    $item['quantity'] ?? 1,
+                'default_quantity' => $item['quantity'] ?? 1,
 
-                'rate' =>
-                    $item['rate'] ?? 0,
+                'rate' => $item['rate'] ?? 0,
             ]);
         }
     }
@@ -880,7 +865,7 @@ class CustomerController extends Controller
             )->max('id') ?? 0
         ) + 1;
 
-        return 'CUS-' . str_pad(
+        return 'CUS-'.str_pad(
             $nextId,
             5,
             '0',
@@ -898,7 +883,7 @@ class CustomerController extends Controller
             )->max('id') ?? 0
         ) + 1;
 
-        return 'SUB-' . str_pad(
+        return 'SUB-'.str_pad(
             $nextId,
             5,
             '0',

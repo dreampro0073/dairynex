@@ -13,10 +13,18 @@ class ApiV1Test extends BusinessTestCase
     {
         $admin = $this->account(Role::ClientAdmin, 1, ['mobile' => '9000000001']);
         $customer = Customer::create(['client_id' => 2, 'name' => 'Other dairy customer', 'delivery_pin_required' => false]);
-        $delivery = Delivery::create(['client_id' => 2, 'customer_id' => $customer->id, 'delivery_date' => today(), 'status_id' => 1]);
+        $delivery = Delivery::create([
+            'client_id' => 2,
+            'customer_id' => $customer->id,
+            'delivery_date' => today(),
+            'status_id' => 1,
+        ]);
 
         $tokenResponse = $this->postJson('/api/v1/auth/token', [
-            'login' => '9000000001', 'client_id' => 1, 'password' => 'test-password-123', 'device_name' => 'feature-test',
+            'login' => '9000000001',
+            'client_id' => 1,
+            'password' => 'test-password-123',
+            'device_name' => 'feature-test',
         ])->assertCreated()->assertJsonPath('user.role', 'client_admin');
 
         $token = $tokenResponse->json('token');

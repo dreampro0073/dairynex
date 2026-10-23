@@ -14,7 +14,9 @@ class SessionController extends Controller
 {
     public function create(Request $request)
     {
-        return Inertia::render('Auth/Login', ['clientId' => ctype_digit((string) $request->query('client_id', '')) ? $request->integer('client_id') : null]);
+        return Inertia::render('Auth/Login', [
+            'clientId' => ctype_digit((string) $request->query('client_id', '')) ? $request->integer('client_id') : null,
+        ]);
     }
 
     public function store(Request $request)
@@ -26,20 +28,25 @@ class SessionController extends Controller
         ]);
 
         // The dairy ID disambiguates credentials; it never establishes authorization.
-        $users = User::where(fn ($q) => $q->where('mobile', $data['mobile'])->orWhere('email', $data['mobile']))
+        $users = User::where(fn ($q) => $q->where('mobile', $data['mobile'])
+            ->orWhere('email', $data['mobile']))
             ->when($data['client_id'] ?? null,
                 fn ($query, $id) => $query->where('client_id', $id))
             ->limit(2)->get();
+
         $user = $users->count() === 1 ? $users->first() : null;
         $valid = false;
+
         try {
             $valid = $user && $user->canSignIn() && Hash::check($data['password'], $user->password);
         } catch (\RuntimeException $exception) {
             // Unsupported legacy hashes cannot authenticate. Do not expose them.
         }
 
-        if (!$valid) {
-            throw ValidationException::withMessages(['mobile' => 'Unable to sign in. Check your dairy ID, email/mobile and password, or contact your administrator.']);
+        if (! $valid) {
+            throw ValidationException::withMessages([
+                'mobile' => 'Unable to sign in. Check your dairy ID, email/mobile and password, or contact your administrator.',
+            ]);
         }
 
         Auth::login($user);

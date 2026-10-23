@@ -8,7 +8,7 @@
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <link rel="stylesheet" type="text/css" href="{{url('assets/css/theme.css')}}">
+    <link rel="stylesheet" type="text/css" href="{{ url('assets/css/theme.css') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

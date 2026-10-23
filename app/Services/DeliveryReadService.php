@@ -27,13 +27,33 @@ class DeliveryReadService
     {
         $delivery = $this->scopedQuery($user)->where('deliveries.id', $id)
             ->select('deliveries.*', 'customers.name as customer_name')->firstOrFail();
-        $items = DB::table('delivery_items as items')->join('products', function ($join) {
-            $join->on('products.id', '=', 'items.product_id')->on('products.client_id', '=', 'items.client_id');
-        })->where('items.delivery_id', $delivery->id)->where('items.client_id', $user->client_id)
-            ->get(['items.id', 'products.name', 'items.planned_quantity', 'items.actual_quantity', 'items.rate', 'items.amount']);
 
-        return [...$delivery->only(['id', 'delivery_date', 'customer_name', 'total_amount', 'pin_required', 'delivery_pin_verified_at', 'completed_by_user_id']),
+        $items = DB::table('delivery_items as items')->join('products', function ($join) {
+            $join->on('products.id', '=', 'items.product_id')
+                ->on('products.client_id', '=', 'items.client_id');
+        })->where('items.delivery_id', $delivery->id)->where('items.client_id', $user->client_id)
+            ->get([
+                'items.id',
+                'products.name',
+                'items.planned_quantity',
+                'items.actual_quantity',
+                'items.rate',
+                'items.amount',
+            ]);
+
+        return [
+            ...$delivery->only([
+                'id',
+                'delivery_date',
+                'customer_name',
+                'total_amount',
+                'pin_required',
+                'delivery_pin_verified_at',
+                'completed_by_user_id',
+            ]),
             'status' => DeliveryStatus::tryFrom($delivery->status_id)?->label() ?? 'Unknown',
-            'pending' => in_array($delivery->status_id, [1, 2]), 'items' => $items];
+            'pending' => in_array($delivery->status_id, [1, 2]),
+            'items' => $items,
+        ];
     }
 }

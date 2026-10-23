@@ -20,8 +20,14 @@ export function installKeyboardViewport() {
             : 0
         const keyboardHeight = coveredHeight > 80 ? coveredHeight : 0
 
-        document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(visibleHeight)}px`)
-        document.documentElement.style.setProperty('--keyboard-height', `${Math.round(keyboardHeight)}px`)
+        document.documentElement.style.setProperty(
+            '--app-viewport-height',
+            `${Math.round(visibleHeight)}px`,
+        )
+        document.documentElement.style.setProperty(
+            '--keyboard-height',
+            `${Math.round(keyboardHeight)}px`,
+        )
         if (keyboardHeight > 0) {
             document.documentElement.setAttribute('data-keyboard-open', '')
         } else {
@@ -52,9 +58,11 @@ export function installKeyboardViewport() {
 
     const onFocusIn = (event) => {
         const target = event.target
-        focusedElement = target instanceof HTMLElement && target.matches('input, select, textarea, [contenteditable="true"]')
-            ? target
-            : null
+        focusedElement =
+            target instanceof HTMLElement &&
+            target.matches('input, select, textarea, [contenteditable="true"]')
+                ? target
+                : null
         scheduleUpdate()
     }
 

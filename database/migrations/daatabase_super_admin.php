@@ -2,27 +2,31 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 // Runs after the existing consolidated business migration. Additive and repeatable.
 return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasColumn('users', 'must_change_password')) {
+        if (! Schema::hasColumn('users', 'must_change_password')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->boolean('must_change_password')->default(false);
                 $table->timestamp('temporary_password_expires_at')->nullable();
             });
         }
-        if (!Schema::hasColumn('client_subscriptions', 'monthly_price')) {
-            Schema::table('client_subscriptions', fn (Blueprint $table) => $table->decimal('monthly_price', 12, 2)->nullable());
+
+        if (! Schema::hasColumn('client_subscriptions', 'monthly_price')) {
+            Schema::table('client_subscriptions', fn (Blueprint $table) => $table->decimal('monthly_price', 12, 2)
+                ->nullable());
         }
+
         DB::table('client_subscriptions')->whereNull('monthly_price')->update([
             'monthly_price' => DB::raw('(SELECT monthly_price FROM plans WHERE plans.id = client_subscriptions.plan_id)'),
         ]);
-        if (!Schema::hasTable('saas_invoices')) {
+
+        if (! Schema::hasTable('saas_invoices')) {
             Schema::create('saas_invoices', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('client_id')->index();
@@ -37,14 +41,16 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-        if (!Schema::hasTable('platform_settings')) {
+
+        if (! Schema::hasTable('platform_settings')) {
             Schema::create('platform_settings', function (Blueprint $table) {
                 $table->string('key')->primary();
                 $table->text('value')->nullable();
                 $table->timestamps();
             });
         }
-        if (!Schema::hasTable('support_tickets')) {
+
+        if (! Schema::hasTable('support_tickets')) {
             Schema::create('support_tickets', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('client_id')->index();

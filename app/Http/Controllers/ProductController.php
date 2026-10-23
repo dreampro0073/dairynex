@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Services\RateService;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -12,7 +15,7 @@ class ProductController extends Controller
 {
     private function clientId(): int
     {
-        return \App\Support\Tenant::id();
+        return Tenant::id();
     }
 
     public function index()
@@ -65,8 +68,7 @@ class ProductController extends Controller
             'category_id' => [
                 'nullable',
                 Rule::exists('product_categories', 'id')
-                    ->where(fn ($query) =>
-                        $query->where('client_id', $clientId)
+                    ->where(fn ($query) => $query->where('client_id', $clientId)
                     ),
             ],
 
@@ -75,8 +77,7 @@ class ProductController extends Controller
                 'string',
                 'max:80',
                 Rule::unique('products', 'sku')
-                    ->where(fn ($query) =>
-                        $query->where('client_id', $clientId)
+                    ->where(fn ($query) => $query->where('client_id', $clientId)
                     ),
             ],
 
@@ -101,9 +102,9 @@ class ProductController extends Controller
             ],
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($clientId, $validated) {
+        DB::transaction(function () use ($clientId, $validated) {
             $product = Product::create(['client_id' => $clientId, ...$validated]);
-            app(\App\Services\RateService::class)->record($product, today()->toDateString(), $product->base_rate);
+            app(RateService::class)->record($product, today()->toDateString(), $product->base_rate);
         });
 
         return redirect()
@@ -124,7 +125,12 @@ class ProductController extends Controller
 
         return Inertia::render('Products/Form', [
             'product' => $product,
-            'rates' => \Illuminate\Support\Facades\DB::table('product_rates')->where('client_id', $clientId)->where('product_id', $product->id)->orderByDesc('effective_from')->limit(50)->get(),
+            'rates' => DB::table('product_rates')
+                ->where('client_id', $clientId)
+                ->where('product_id', $product->id)
+                ->orderByDesc('effective_from')
+                ->limit(50)
+                ->get(),
             'categories' => $categories,
         ]);
     }
@@ -141,8 +147,7 @@ class ProductController extends Controller
             'category_id' => [
                 'nullable',
                 Rule::exists('product_categories', 'id')
-                    ->where(fn ($query) =>
-                        $query->where('client_id', $clientId)
+                    ->where(fn ($query) => $query->where('client_id', $clientId)
                     ),
             ],
 
@@ -151,8 +156,7 @@ class ProductController extends Controller
                 'string',
                 'max:80',
                 Rule::unique('products', 'sku')
-                    ->where(fn ($query) =>
-                        $query->where('client_id', $clientId)
+                    ->where(fn ($query) => $query->where('client_id', $clientId)
                     )
                     ->ignore($product->id),
             ],
@@ -178,11 +182,14 @@ class ProductController extends Controller
             ],
         ]);
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($product, $validated) {
+        DB::transaction(function () use ($product, $validated) {
             $product = Product::lockForUpdate()->findOrFail($product->id);
             $changed = (string) $product->base_rate !== number_format((float) $validated['base_rate'], 2, '.', '');
             $product->update($validated);
-            if ($changed) { app(\App\Services\RateService::class)->record($product, today()->toDateString(), $product->base_rate); }
+
+            if ($changed) {
+                app(RateService::class)->record($product, today()->toDateString(), $product->base_rate);
+            }
         });
 
         return redirect()
@@ -193,13 +200,18 @@ class ProductController extends Controller
     public function rate(Request $request, Product $product)
     {
         abort_unless($product->client_id === $this->clientId(), 403);
-        $data = $request->validate(['rate' => ['required', 'numeric', 'min:0', 'max:9999999.99', 'decimal:0,2'],
-            'effective_from' => ['required', 'date_format:Y-m-d', 'after:today']]);
-        \Illuminate\Support\Facades\DB::transaction(function () use ($product, $data) {
+        $data = $request->validate([
+            'rate' => ['required', 'numeric', 'min:0', 'max:9999999.99', 'decimal:0,2'],
+            'effective_from' => ['required', 'date_format:Y-m-d', 'after:today'],
+        ]);
+
+        DB::transaction(function () use ($product, $data) {
             $product = Product::lockForUpdate()->findOrFail($product->id);
-            app(\App\Services\RateService::class)->record($product, $data['effective_from'], $data['rate']);
+            app(RateService::class)->record($product, $data['effective_from'], $data['rate']);
         });
-        return back()->with('success', 'Future product rate saved. Existing deliveries keep their recorded rate.');
+
+        return back()
+            ->with('success', 'Future product rate saved. Existing deliveries keep their recorded rate.');
     }
 
     public function destroy(Product $product)
@@ -208,20 +220,39 @@ class ProductController extends Controller
 
         abort_if($product->client_id != $clientId, 403);
 
-        if (\Illuminate\Support\Facades\DB::table('delivery_items')->where('product_id', $product->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        if (DB::table('delivery_items')->where('product_id', $product->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('subscription_items')->where('product_id', $product->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('subscription_items')->where('product_id', $product->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('invoice_items')->where('product_id', $product->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('invoice_items')->where('product_id', $product->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('inventory_transactions')->where('product_id', $product->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('inventory_transactions')->where('product_id', $product->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('product_rates')->where('product_id', $product->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('product_rates')->where('product_id', $product->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
 
         $product->delete();

@@ -8,7 +8,12 @@ class Plan extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['monthly_price' => 'decimal:2', 'status' => 'integer', 'max_customers' => 'integer', 'max_users' => 'integer'];
+    protected $casts = [
+        'monthly_price' => 'decimal:2',
+        'status' => 'integer',
+        'max_customers' => 'integer',
+        'max_users' => 'integer',
+    ];
 
     public function subscriptions()
     {

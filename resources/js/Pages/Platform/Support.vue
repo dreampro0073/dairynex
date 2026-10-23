@@ -3,16 +3,270 @@ import { Link, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import PlatformLayout from '@/Layouts/PlatformLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
-const props = defineProps({ tickets: Object, clients: Array, filters: Object })
-const filter = useForm({ search: props.filters.search || '', priority: props.filters.priority || '', status: props.filters.status || '' })
-const open = ref(false), editing = ref(null)
-const form = useForm({ client_id: '', subject: '', description: '', priority: 'medium', status: 'open', resolution: '' })
-const edit = ticket => { editing.value = ticket?.id || null; form.defaults({ client_id: ticket?.client_id || '', subject: ticket?.subject || '', description: ticket?.description || '', priority: ticket?.priority || 'medium', status: ticket?.status || 'open', resolution: ticket?.resolution || '' }); form.reset(); form.clearErrors(); open.value = true }
-const save = () => { const options = { onSuccess: () => { open.value = false; form.reset() } }; editing.value ? form.put(`/platform/support/${editing.value}`, options) : form.post('/platform/support', options) }
+
+const props = defineProps({
+    tickets: Object,
+    clients: Array,
+    filters: Object,
+})
+
+const filter = useForm({
+    search: props.filters.search || '',
+    priority: props.filters.priority || '',
+    status: props.filters.status || '',
+})
+
+const open = ref(false),
+    editing = ref(null)
+
+const form = useForm({
+    client_id: '',
+    subject: '',
+    description: '',
+    priority: 'medium',
+    status: 'open',
+    resolution: '',
+})
+
+const edit = (ticket) => {
+    editing.value = ticket?.id || null
+    form.defaults({
+        client_id: ticket?.client_id || '',
+        subject: ticket?.subject || '',
+        description: ticket?.description || '',
+        priority: ticket?.priority || 'medium',
+        status: ticket?.status || 'open',
+        resolution: ticket?.resolution || '',
+    })
+    form.reset()
+    form.clearErrors()
+    open.value = true
+}
+
+const save = () => {
+    const options = {
+        onSuccess: () => {
+            open.value = false
+            form.reset()
+        },
+    }
+    editing.value
+        ? form.put(`/platform/support/${editing.value}`, options)
+        : form.post('/platform/support', options)
+}
 </script>
-<template><PlatformLayout title="Support" meta="Client issue tracking"><template #actions><button class="btn sm" @click="edit(null)">+ New Ticket</button></template>
-    <section class="panel"><div class="panel-head"><h3>Support Tickets</h3><Link href="/platform/support?status=closed" class="link">View closed</Link></div><form class="filters" @submit.prevent="filter.get('/platform/support', { preserveState: true })"><label>Search<input v-model="filter.search" placeholder="Dairy or issue"></label><label>Status<select v-model="filter.status"><option value="">All statuses</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="closed">Closed</option></select></label><label>Priority<select v-model="filter.priority"><option value="">All priorities</option><option v-for="p in ['low','medium','high']" :key="p">{{ p }}</option></select></label><button class="btn sm">Filter</button><Link href="/platform/support" class="btn secondary sm">Clear</Link></form>
-        <div class="table-scroll"><table><thead><tr><th>Ticket</th><th>Client</th><th>Issue</th><th>Priority</th><th>Status</th><th class="num">Raised</th><th></th></tr></thead><tbody><tr v-for="ticket in tickets.data" :key="ticket.id"><td>#{{ ticket.id }}</td><td>{{ ticket.client }}</td><td>{{ ticket.subject }}</td><td><span class="badge" :class="ticket.priority === 'high' ? 'due' : 'pending'">{{ ticket.priority }}</span></td><td>{{ ticket.status.replace('_',' ') }}</td><td class="num">{{ ticket.created_at }}</td><td><button class="btn secondary sm" @click="edit(ticket)">View / Update</button></td></tr><tr v-if="!tickets.data.length"><td colspan="7" class="empty">No support tickets found.</td></tr></tbody></table></div><Pagination :data="tickets" />
-    </section>
-    <form v-if="open" class="panel section-space" @submit.prevent="save"><div class="panel-head"><h3>{{ editing ? `Ticket #${editing}` : 'New Support Ticket' }}</h3></div><div class="form-grid"><div class="field"><label for="ticket-client">Client</label><select id="ticket-client" v-model="form.client_id" required :disabled="!!editing"><option value="">Choose dairy</option><option v-for="client in clients" :key="client.id" :value="client.id">{{ client.name }}</option></select></div><div class="field"><label for="subject">Issue</label><input id="subject" v-model="form.subject" required maxlength="200"></div><div class="field"><label for="priority">Priority</label><select id="priority" v-model="form.priority"><option v-for="p in ['low','medium','high']" :key="p">{{ p }}</option></select></div><div class="field"><label for="ticket-status">Status</label><select id="ticket-status" v-model="form.status"><option value="open">Open</option><option value="in_progress">In progress</option><option value="closed">Closed</option></select></div><div class="field full"><label for="description">Description</label><textarea id="description" v-model="form.description" required maxlength="10000"></textarea></div><div class="field full"><label for="resolution">Resolution (required to close)</label><textarea id="resolution" v-model="form.resolution" :required="form.status === 'closed'" maxlength="10000"></textarea></div></div><div class="form-actions"><button class="btn sm" :disabled="form.processing">Save Ticket</button><button type="button" class="btn secondary sm" @click="open = false">Cancel</button></div></form>
-</PlatformLayout></template>
+
+<template>
+    <PlatformLayout
+        title="Support"
+        meta="Client issue tracking"
+    >
+        <template #actions>
+            <button
+                class="btn sm"
+                @click="edit(null)"
+            >
+                + New Ticket
+            </button>
+        </template>
+        <section class="panel">
+            <div class="panel-head">
+                <h3>Support Tickets</h3>
+                <Link
+                    href="/platform/support?status=closed"
+                    class="link"
+                >
+                    View closed
+                </Link>
+            </div>
+            <form
+                class="filters"
+                @submit.prevent="filter.get('/platform/support', { preserveState: true })"
+            >
+                <label>
+                    Search
+                    <input
+                        v-model="filter.search"
+                        placeholder="Dairy or issue"
+                    />
+                </label>
+                <label>
+                    Status
+                    <select v-model="filter.status">
+                        <option value="">All statuses</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </label>
+                <label>
+                    Priority
+                    <select v-model="filter.priority">
+                        <option value="">All priorities</option>
+                        <option
+                            v-for="p in ['low', 'medium', 'high']"
+                            :key="p"
+                        >
+                            {{ p }}
+                        </option>
+                    </select>
+                </label>
+                <button class="btn sm">Filter</button>
+                <Link
+                    href="/platform/support"
+                    class="btn secondary sm"
+                >
+                    Clear
+                </Link>
+            </form>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Client</th>
+                            <th>Issue</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th class="num">Raised</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="ticket in tickets.data"
+                            :key="ticket.id"
+                        >
+                            <td>#{{ ticket.id }}</td>
+                            <td>{{ ticket.client }}</td>
+                            <td>{{ ticket.subject }}</td>
+                            <td>
+                                <span
+                                    class="badge"
+                                    :class="ticket.priority === 'high' ? 'due' : 'pending'"
+                                >
+                                    {{ ticket.priority }}
+                                </span>
+                            </td>
+                            <td>{{ ticket.status.replace('_', ' ') }}</td>
+                            <td class="num">{{ ticket.created_at }}</td>
+                            <td>
+                                <button
+                                    class="btn secondary sm"
+                                    @click="edit(ticket)"
+                                >
+                                    View / Update
+                                </button>
+                            </td>
+                        </tr>
+                        <tr v-if="!tickets.data.length">
+                            <td
+                                colspan="7"
+                                class="empty"
+                            >
+                                No support tickets found.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <Pagination :data="tickets" />
+        </section>
+        <form
+            v-if="open"
+            class="panel section-space"
+            @submit.prevent="save"
+        >
+            <div class="panel-head">
+                <h3>{{ editing ? `Ticket #${editing}` : 'New Support Ticket' }}</h3>
+            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="ticket-client">Client</label>
+                    <select
+                        id="ticket-client"
+                        v-model="form.client_id"
+                        required
+                        :disabled="!!editing"
+                    >
+                        <option value="">Choose dairy</option>
+                        <option
+                            v-for="client in clients"
+                            :key="client.id"
+                            :value="client.id"
+                        >
+                            {{ client.name }}
+                        </option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="subject">Issue</label>
+                    <input
+                        id="subject"
+                        v-model="form.subject"
+                        required
+                        maxlength="200"
+                    />
+                </div>
+                <div class="field">
+                    <label for="priority">Priority</label>
+                    <select
+                        id="priority"
+                        v-model="form.priority"
+                    >
+                        <option
+                            v-for="p in ['low', 'medium', 'high']"
+                            :key="p"
+                        >
+                            {{ p }}
+                        </option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="ticket-status">Status</label>
+                    <select
+                        id="ticket-status"
+                        v-model="form.status"
+                    >
+                        <option value="open">Open</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="field full">
+                    <label for="description">Description</label>
+                    <textarea
+                        id="description"
+                        v-model="form.description"
+                        required
+                        maxlength="10000"
+                    ></textarea>
+                </div>
+                <div class="field full">
+                    <label for="resolution">Resolution (required to close)</label>
+                    <textarea
+                        id="resolution"
+                        v-model="form.resolution"
+                        :required="form.status === 'closed'"
+                        maxlength="10000"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button
+                    class="btn sm"
+                    :disabled="form.processing"
+                >
+                    Save Ticket
+                </button>
+                <button
+                    type="button"
+                    class="btn secondary sm"
+                    @click="open = false"
+                >
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </PlatformLayout>
+</template>

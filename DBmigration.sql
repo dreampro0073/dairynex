@@ -646,10 +646,41 @@ ALTER TABLE deliveries ADD completed_by_user_id BIGINT UNSIGNED NULL;
 
 -- ReferenceDataSeeder: insert missing reference values only; conflict => abort.
 -- Existing manager/accountant reference rows and business users are preserved.
-INSERT IGNORE INTO ref_user_types (id, name) VALUES (1, 'super_admin'), (2, 'client_admin'), (5, 'delivery_boy'), (6, 'customer');
-INSERT IGNORE INTO ref_delivery_statuses (id, name) VALUES (1,'pending'),(2,'pin_verified'),(3,'delivered'),(4,'skipped'),(5,'cancelled'),(6,'failed'),(7,'customer_unavailable'),(8,'partial');
-INSERT IGNORE INTO ref_payment_methods (id, name) VALUES (1,'cash'),(2,'upi'),(3,'bank_transfer'),(4,'card'),(5,'online'),(6,'cheque'),(7,'wallet');
-INSERT IGNORE INTO ref_transaction_types (id, name) VALUES (1,'purchase'),(2,'sale'),(3,'delivery'),(4,'return'),(5,'wastage'),(6,'adjustment'),(7,'transfer'),(8,'payment'),(9,'refund'),(10,'opening_balance'),(11,'credit_note'),(12,'debit_note');
+INSERT IGNORE INTO ref_user_types (id, name) VALUES
+    (1, 'super_admin'),
+    (2, 'client_admin'),
+    (5, 'delivery_boy'),
+    (6, 'customer');
+INSERT IGNORE INTO ref_delivery_statuses (id, name) VALUES
+    (1, 'pending'),
+    (2, 'pin_verified'),
+    (3, 'delivered'),
+    (4, 'skipped'),
+    (5, 'cancelled'),
+    (6, 'failed'),
+    (7, 'customer_unavailable'),
+    (8, 'partial');
+INSERT IGNORE INTO ref_payment_methods (id, name) VALUES
+    (1, 'cash'),
+    (2, 'upi'),
+    (3, 'bank_transfer'),
+    (4, 'card'),
+    (5, 'online'),
+    (6, 'cheque'),
+    (7, 'wallet');
+INSERT IGNORE INTO ref_transaction_types (id, name) VALUES
+    (1, 'purchase'),
+    (2, 'sale'),
+    (3, 'delivery'),
+    (4, 'return'),
+    (5, 'wastage'),
+    (6, 'adjustment'),
+    (7, 'transfer'),
+    (8, 'payment'),
+    (9, 'refund'),
+    (10, 'opening_balance'),
+    (11, 'credit_note'),
+    (12, 'debit_note');
 
 -- 2026-10-16: 2026_10_16_000004_protect_ledger_references.php
 -- Preflight: resolve duplicates manually; Laravel aborts if any exist, never deletes them.
@@ -662,11 +693,47 @@ ALTER TABLE customer_ledger ADD UNIQUE KEY ledger_reference_unique (client_id, r
 -- Guarded starter framework table definitions (0001_01_01_000000/1/2 migrations).
 -- Missing tables only. SQL baseline indexes use original names; Laravel prefixes
 -- business index names with their table for SQLite portability, same columns/semantics.
-CREATE TABLE IF NOT EXISTS cache (`key` VARCHAR(255) PRIMARY KEY, value MEDIUMTEXT NOT NULL, expiration INT NOT NULL);
-CREATE TABLE IF NOT EXISTS cache_locks (`key` VARCHAR(255) PRIMARY KEY, owner VARCHAR(255) NOT NULL, expiration INT NOT NULL);
-CREATE TABLE IF NOT EXISTS jobs (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, queue VARCHAR(255) NOT NULL, payload LONGTEXT NOT NULL, attempts TINYINT UNSIGNED NOT NULL, reserved_at INT UNSIGNED NULL, available_at INT UNSIGNED NOT NULL, created_at INT UNSIGNED NOT NULL, INDEX jobs_queue_index (queue));
-CREATE TABLE IF NOT EXISTS job_batches (id VARCHAR(255) PRIMARY KEY, name VARCHAR(255) NOT NULL, total_jobs INT NOT NULL, pending_jobs INT NOT NULL, failed_jobs INT NOT NULL, failed_job_ids LONGTEXT NOT NULL, options MEDIUMTEXT NULL, cancelled_at INT NULL, created_at INT NOT NULL, finished_at INT NULL);
-CREATE TABLE IF NOT EXISTS failed_jobs (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, uuid VARCHAR(255) NOT NULL UNIQUE, connection TEXT NOT NULL, queue TEXT NOT NULL, payload LONGTEXT NOT NULL, exception LONGTEXT NOT NULL, failed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS cache (
+    `key` VARCHAR(255) PRIMARY KEY,
+    value MEDIUMTEXT NOT NULL,
+    expiration INT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cache_locks (
+    `key` VARCHAR(255) PRIMARY KEY,
+    owner VARCHAR(255) NOT NULL,
+    expiration INT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    INDEX jobs_queue_index (queue)
+);
+CREATE TABLE IF NOT EXISTS job_batches (
+    id VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    total_jobs INT NOT NULL,
+    pending_jobs INT NOT NULL,
+    failed_jobs INT NOT NULL,
+    failed_job_ids LONGTEXT NOT NULL,
+    options MEDIUMTEXT NULL,
+    cancelled_at INT NULL,
+    created_at INT NOT NULL,
+    finished_at INT NULL
+);
+CREATE TABLE IF NOT EXISTS failed_jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    uuid VARCHAR(255) NOT NULL UNIQUE,
+    connection TEXT NOT NULL,
+    queue TEXT NOT NULL,
+    payload LONGTEXT NOT NULL,
+    exception LONGTEXT NOT NULL,
+    failed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 -- password_reset_tokens and sessions definitions are in the earlier auth-support section.
 
 -- 2026-10-16: Migration file consolidation into database/migrations/daatabase_migrations.php.

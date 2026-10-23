@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProductCategory;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -11,7 +12,7 @@ class ProductCategoryController extends Controller
 {
     public function index(Request $request)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         $categories = ProductCategory::query()
             ->where('client_id', $clientId)
@@ -32,7 +33,7 @@ class ProductCategoryController extends Controller
 
     public function store(Request $request)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         $validated = $request->validate([
             'name' => [
@@ -60,7 +61,7 @@ class ProductCategoryController extends Controller
 
     public function update(Request $request, ProductCategory $category)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless($category->client_id === $clientId, 403);
 
@@ -87,7 +88,7 @@ class ProductCategoryController extends Controller
 
     public function destroy(ProductCategory $category)
     {
-        $clientId = \App\Support\Tenant::id();
+        $clientId = Tenant::id();
 
         abort_unless($category->client_id === $clientId, 403);
 

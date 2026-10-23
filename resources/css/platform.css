@@ -1,3 +1,258 @@
-.platform-shell .shell{min-height:100vh}.platform-shell .sidebar{display:flex;flex-direction:column}.platform-shell .nav-item{text-decoration:none}.platform-shell .platform-signout{margin-top:auto;padding:20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.platform-shell .title{font-size:18px}.platform-shell .topbar{gap:12px}.platform-shell .topbar-right{margin-left:auto}.platform-shell .content-inner{max-width:1440px}.platform-shell .filters{display:flex;gap:10px;padding:16px 19px;flex-wrap:wrap;align-items:end}.platform-shell .filters label{font-size:12px;display:flex;flex-direction:column;gap:5px}.platform-shell input,.platform-shell select,.platform-shell textarea{border:1px solid var(--line-strong);border-radius:8px;padding:9px 12px;background:white;color:var(--ink);max-width:100%}.platform-shell .filters input{min-width:180px}.platform-shell textarea{min-height:100px;width:100%}.platform-shell .action-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.platform-shell .field input,.platform-shell .field select{width:100%}.platform-shell .field .error-text{color:var(--danger);font-size:12px}.platform-shell .muted{color:var(--ink-soft);font-size:12px}.platform-shell .empty{padding:30px;text-align:center;color:var(--ink-soft)}.platform-shell .plan-card{display:flex;flex-direction:column;gap:14px}.platform-shell .plan-card .action-row{margin-top:auto}.platform-shell .section-space{margin-top:18px}.platform-shell .info-card{display:flex;flex-direction:column;gap:10px}.platform-shell .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:19px}.platform-shell dt{color:var(--ink-soft);font-size:12px;font-weight:500}.platform-shell dd{margin:4px 0 0;overflow-wrap:anywhere}.platform-shell .form-actions{display:flex;gap:10px;margin:0 19px 19px}.platform-shell .bar-row{padding:14px 19px}.platform-shell .bar-fill{height:100%;background:var(--info);min-width:0}.platform-shell .bar-track{overflow:hidden}.platform-shell a.btn{white-space:normal}.platform-shell .panel-head{gap:12px;flex-wrap:wrap}.platform-shell .btn:disabled{opacity:.5;cursor:not-allowed}.platform-shell .status-dot{display:inline-block}.platform-shell .login-modal-backdrop{position:fixed;inset:0;background:rgba(14,31,61,.55);z-index:1100;display:flex;align-items:center;justify-content:center;padding:18px}.platform-shell .login-modal{background:white;border-radius:16px;width:min(680px,100%);max-height:90vh;overflow:auto;box-shadow:var(--shadow-drawer)}.platform-shell .login-secret{padding:16px;background:var(--warning-soft);border:1px solid var(--warning);border-radius:10px;margin:16px 19px}.platform-shell .login-secret code{display:block;font-size:20px;overflow-wrap:anywhere;user-select:all;color:var(--ink);padding:12px 0}.platform-shell .account-card{margin:12px 19px;padding:16px;border:1px solid var(--line);border-radius:10px}.platform-shell .switch-label{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 19px}.platform-shell .switch-label input{width:20px;height:20px}.platform-shell .notice{white-space:pre-wrap}.platform-shell .pprice span{font-size:13px;color:var(--ink-soft)}.platform-shell table td{vertical-align:middle}.platform-shell .nowrap{white-space:nowrap}@media(max-width:767px){.platform-shell .topbar{flex-wrap:wrap}.platform-shell .topbar-right{gap:8px}.platform-shell .detail-grid{grid-template-columns:1fr}.platform-shell .filters>*{flex:1}.platform-shell .filters input{min-width:0;width:100%}.platform-shell .action-row .btn{font-size:11px}.platform-shell .bar-row{flex-wrap:wrap}.platform-shell .login-modal-backdrop{padding:8px}}
-@media(max-width:768px){.platform-shell .filters>label{flex:1 1 140px}.platform-shell .filters>label:first-child{flex-basis:100%}}
-@media(max-width:768px){.platform-shell .login-modal-backdrop{min-height:var(--app-viewport-height,100dvh);height:var(--app-viewport-height,100dvh);overflow-y:auto;align-items:flex-start;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}.platform-shell .login-modal{max-height:calc(var(--app-viewport-height,100dvh) - 16px);margin:auto 0;overflow-y:auto;overscroll-behavior:contain}}
+.platform-shell .shell {
+    min-height: 100vh;
+}
+.platform-shell .sidebar {
+    display: flex;
+    flex-direction: column;
+}
+.platform-shell .nav-item {
+    text-decoration: none;
+}
+.platform-shell .platform-signout {
+    margin-top: auto;
+    padding: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.platform-shell .title {
+    font-size: 18px;
+}
+.platform-shell .topbar {
+    gap: 12px;
+}
+.platform-shell .topbar-right {
+    margin-left: auto;
+}
+.platform-shell .content-inner {
+    max-width: 1440px;
+}
+.platform-shell .filters {
+    display: flex;
+    gap: 10px;
+    padding: 16px 19px;
+    flex-wrap: wrap;
+    align-items: end;
+}
+.platform-shell .filters label {
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.platform-shell input,
+.platform-shell select,
+.platform-shell textarea {
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    padding: 9px 12px;
+    background: white;
+    color: var(--ink);
+    max-width: 100%;
+}
+.platform-shell .filters input {
+    min-width: 180px;
+}
+.platform-shell textarea {
+    min-height: 100px;
+    width: 100%;
+}
+.platform-shell .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.platform-shell .field input,
+.platform-shell .field select {
+    width: 100%;
+}
+.platform-shell .field .error-text {
+    color: var(--danger);
+    font-size: 12px;
+}
+.platform-shell .muted {
+    color: var(--ink-soft);
+    font-size: 12px;
+}
+.platform-shell .empty {
+    padding: 30px;
+    text-align: center;
+    color: var(--ink-soft);
+}
+.platform-shell .plan-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.platform-shell .plan-card .action-row {
+    margin-top: auto;
+}
+.platform-shell .section-space {
+    margin-top: 18px;
+}
+.platform-shell .info-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.platform-shell .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    padding: 19px;
+}
+.platform-shell dt {
+    color: var(--ink-soft);
+    font-size: 12px;
+    font-weight: 500;
+}
+.platform-shell dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+}
+.platform-shell .form-actions {
+    display: flex;
+    gap: 10px;
+    margin: 0 19px 19px;
+}
+.platform-shell .bar-row {
+    padding: 14px 19px;
+}
+.platform-shell .bar-fill {
+    height: 100%;
+    background: var(--info);
+    min-width: 0;
+}
+.platform-shell .bar-track {
+    overflow: hidden;
+}
+.platform-shell a.btn {
+    white-space: normal;
+}
+.platform-shell .panel-head {
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.platform-shell .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.platform-shell .status-dot {
+    display: inline-block;
+}
+.platform-shell .login-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 31, 61, 0.55);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+.platform-shell .login-modal {
+    background: white;
+    border-radius: 16px;
+    width: min(680px, 100%);
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: var(--shadow-drawer);
+}
+.platform-shell .login-secret {
+    padding: 16px;
+    background: var(--warning-soft);
+    border: 1px solid var(--warning);
+    border-radius: 10px;
+    margin: 16px 19px;
+}
+.platform-shell .login-secret code {
+    display: block;
+    font-size: 20px;
+    overflow-wrap: anywhere;
+    user-select: all;
+    color: var(--ink);
+    padding: 12px 0;
+}
+.platform-shell .account-card {
+    margin: 12px 19px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+.platform-shell .switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 19px;
+}
+.platform-shell .switch-label input {
+    width: 20px;
+    height: 20px;
+}
+.platform-shell .notice {
+    white-space: pre-wrap;
+}
+.platform-shell .pprice span {
+    font-size: 13px;
+    color: var(--ink-soft);
+}
+.platform-shell table td {
+    vertical-align: middle;
+}
+.platform-shell .nowrap {
+    white-space: nowrap;
+}
+@media (max-width: 767px) {
+    .platform-shell .topbar {
+        flex-wrap: wrap;
+    }
+    .platform-shell .topbar-right {
+        gap: 8px;
+    }
+    .platform-shell .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    .platform-shell .filters > * {
+        flex: 1;
+    }
+    .platform-shell .filters input {
+        min-width: 0;
+        width: 100%;
+    }
+    .platform-shell .action-row .btn {
+        font-size: 11px;
+    }
+    .platform-shell .bar-row {
+        flex-wrap: wrap;
+    }
+    .platform-shell .login-modal-backdrop {
+        padding: 8px;
+    }
+}
+@media (max-width: 768px) {
+    .platform-shell .filters > label {
+        flex: 1 1 140px;
+    }
+    .platform-shell .filters > label:first-child {
+        flex-basis: 100%;
+    }
+}
+@media (max-width: 768px) {
+    .platform-shell .login-modal-backdrop {
+        min-height: var(--app-viewport-height, 100dvh);
+        height: var(--app-viewport-height, 100dvh);
+        overflow-y: auto;
+        align-items: flex-start;
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+            max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
+    .platform-shell .login-modal {
+        max-height: calc(var(--app-viewport-height, 100dvh) - 16px);
+        margin: auto 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+}

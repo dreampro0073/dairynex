@@ -8,7 +8,12 @@ class ClientSubscription extends Model
 {
     protected $guarded = ['id'];
 
-    protected $casts = ['status' => 'integer', 'monthly_price' => 'decimal:2', 'start_date' => 'date:Y-m-d', 'end_date' => 'date:Y-m-d'];
+    protected $casts = [
+        'status' => 'integer',
+        'monthly_price' => 'decimal:2',
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
+    ];
 
     public function plan()
     {

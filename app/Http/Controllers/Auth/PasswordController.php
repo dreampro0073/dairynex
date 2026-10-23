@@ -29,7 +29,11 @@ class PasswordController extends Controller
             Password::sendResetLink($data);
         }
 
-        return back()->with('success', 'If an eligible account has a unique matching email and email delivery is configured, a reset link will be sent. Otherwise contact your dairy administrator.');
+        return back()
+            ->with(
+                'success',
+                'If an eligible account has a unique matching email and email delivery is configured, a reset link will be sent. Otherwise contact your dairy administrator.'
+            );
     }
 
     public function form(Request $request, string $token)
@@ -44,8 +48,10 @@ class PasswordController extends Controller
             'email' => ['required', 'email', 'max:150'],
             'password' => ['required', 'confirmed', PasswordRule::min(12)],
         ]);
+
         $users = User::where('email', $data['email'])->limit(2)->get();
-        if ($users->count() !== 1 || !$users->first()->canSignIn()) {
+
+        if ($users->count() !== 1 || ! $users->first()->canSignIn()) {
             throw ValidationException::withMessages(['email' => 'This password reset link is invalid or expired.']);
         }
 
@@ -53,6 +59,7 @@ class PasswordController extends Controller
             $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
             event(new PasswordReset($user));
         });
+
         if ($result !== Password::PASSWORD_RESET) {
             throw ValidationException::withMessages(['email' => __($result)]);
         }

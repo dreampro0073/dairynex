@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\BusinessTestCase;
 
 class ProvisioningTest extends BusinessTestCase
@@ -18,6 +20,7 @@ class ProvisioningTest extends BusinessTestCase
             ->expectsQuestion('New password (at least 12 characters)', 'provisioned-password-123')
             ->expectsQuestion('Confirm password', 'provisioned-password-123')
             ->assertExitCode(0);
+
         $this->assertSame(Role::ClientAdmin, $user->fresh()->role());
         $this->assertSame(1, $user->fresh()->client_id);
         $this->assertTrue(Hash::check('provisioned-password-123', $user->fresh()->password));
@@ -33,7 +36,8 @@ class ProvisioningTest extends BusinessTestCase
             ->expectsQuestion('Email (optional)', 'operator@example.test')
             ->expectsQuestion('Password (at least 12 characters)', 'operator-password-123')
             ->expectsQuestion('Confirm password', 'operator-password-123')->assertExitCode(0);
-        $user = \App\Models\User::where('mobile', '9876543210')->firstOrFail();
+
+        $user = User::where('mobile', '9876543210')->firstOrFail();
         $this->assertSame(Role::SuperAdmin, $user->role());
         $this->assertNull($user->client_id);
         $this->assertTrue(Hash::check('operator-password-123', $user->password));
@@ -46,7 +50,7 @@ class ProvisioningTest extends BusinessTestCase
         $migration->up();
         $migration->down();
         $this->assertDatabaseHas('users', ['id' => $user->id, 'mobile' => $user->mobile]);
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasTable('sessions'));
+        $this->assertTrue(Schema::hasTable('sessions'));
     }
 
     public function test_password_changes_invalidate_previously_authenticated_sessions(): void

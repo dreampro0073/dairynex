@@ -13,10 +13,14 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'client_id' => Client::factory(), 'user_type_id' => Role::Customer->value,
-            'name' => fake()->name(), 'mobile' => fake()->unique()->numerify('9#########'),
-            'email' => fake()->unique()->safeEmail(), 'status' => 1,
-            'password' => Hash::make(Str::random(32)), 'remember_token' => Str::random(60),
+            'client_id' => Client::factory(),
+            'user_type_id' => Role::Customer->value,
+            'name' => fake()->name(),
+            'mobile' => fake()->unique()->numerify('9#########'),
+            'email' => fake()->unique()->safeEmail(),
+            'status' => 1,
+            'password' => Hash::make(Str::random(32)),
+            'remember_token' => Str::random(60),
         ];
     }
 

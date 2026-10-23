@@ -2,20 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Models\User;
+use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class DeliveryBoyController extends Controller
 {
-    private const DELIVERY_BOY_TYPE = \App\Enums\Role::DeliveryBoy->value;
+    private const DELIVERY_BOY_TYPE = Role::DeliveryBoy->value;
 
     private function clientId()
     {
-        return \App\Support\Tenant::id();
+        return Tenant::id();
     }
 
     /**
@@ -49,30 +52,23 @@ class DeliveryBoyController extends Controller
                 return [
                     'id' => $deliveryBoy->id,
 
-                    'name' =>
-                        $deliveryBoy->name,
+                    'name' => $deliveryBoy->name,
 
-                    'mobile' =>
-                        $deliveryBoy->mobile,
+                    'mobile' => $deliveryBoy->mobile,
 
-                    'email' =>
-                        $deliveryBoy->email,
+                    'email' => $deliveryBoy->email,
 
-                    'status' =>
-                        (int) $deliveryBoy->status,
+                    'status' => (int) $deliveryBoy->status,
 
-                    'route_id' =>
-                        $route->id ?? null,
+                    'route_id' => $route->id ?? null,
 
-                    'route' =>
-                        $route->name
+                    'route' => $route->name
                         ?? 'Unassigned',
 
-                    'expected_stops' =>
-                        (int) (
-                            $route->expected_stops
-                            ?? 0
-                        ),
+                    'expected_stops' => (int) (
+                        $route->expected_stops
+                        ?? 0
+                    ),
                 ];
             });
 
@@ -89,8 +85,7 @@ class DeliveryBoyController extends Controller
         return Inertia::render(
             'DeliveryBoys/Index',
             [
-                'deliveryBoys' =>
-                    $deliveryBoys,
+                'deliveryBoys' => $deliveryBoys,
 
                 'stats' => [
                     'total' => $total,
@@ -113,10 +108,9 @@ class DeliveryBoyController extends Controller
             [
                 'deliveryBoy' => null,
 
-                'routes' =>
-                    $this->getRoutes(
-                        $clientId
-                    ),
+                'routes' => $this->getRoutes(
+                    $clientId
+                ),
             ]
         );
     }
@@ -139,7 +133,7 @@ class DeliveryBoyController extends Controller
             $clientId
         ) {
 
-            $deliveryBoy = new User();
+            $deliveryBoy = new User;
 
             $deliveryBoy->client_id =
                 $clientId;
@@ -157,11 +151,10 @@ class DeliveryBoyController extends Controller
                 $validated['email']
                 ?? null;
 
-
             $deliveryBoy->status =
                 $validated['status'] ?? 1;
 
-            if (!empty($validated['password'])) {
+            if (! empty($validated['password'])) {
                 $deliveryBoy->password = $validated['password'];
             }
 
@@ -212,32 +205,25 @@ class DeliveryBoyController extends Controller
             'DeliveryBoys/Form',
             [
                 'deliveryBoy' => [
-                    'id' =>
-                        $deliveryBoy->id,
+                    'id' => $deliveryBoy->id,
 
-                    'name' =>
-                        $deliveryBoy->name,
+                    'name' => $deliveryBoy->name,
 
-                    'mobile' =>
-                        $deliveryBoy->mobile,
+                    'mobile' => $deliveryBoy->mobile,
 
-                    'email' =>
-                        $deliveryBoy->email,
+                    'email' => $deliveryBoy->email,
 
-                    'status' =>
-                        (int)
+                    'status' => (int)
                         $deliveryBoy->status,
 
-                    'route_id' =>
-                        $route->id
+                    'route_id' => $route->id
                         ?? '',
                 ],
 
-                'routes' =>
-                    $this->getRoutes(
-                        $clientId,
-                        $deliveryBoy->id
-                    ),
+                'routes' => $this->getRoutes(
+                    $clientId,
+                    $deliveryBoy->id
+                ),
             ]
         );
     }
@@ -282,7 +268,7 @@ class DeliveryBoyController extends Controller
             $deliveryBoy->status =
                 $validated['status'];
 
-            if (!empty($validated['password'])) {
+            if (! empty($validated['password'])) {
                 $deliveryBoy->password = $validated['password'];
             }
 
@@ -317,14 +303,25 @@ class DeliveryBoyController extends Controller
             $clientId
         );
 
-        if (\Illuminate\Support\Facades\DB::table('deliveries')->where('delivery_boy_id', $deliveryBoy->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+        if (DB::table('deliveries')->where('delivery_boy_id', $deliveryBoy->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('payments')->where('collected_by_user_id', $deliveryBoy->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('payments')->where('collected_by_user_id', $deliveryBoy->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
-        if (\Illuminate\Support\Facades\DB::table('customer_ledger')->where('created_by_user_id', $deliveryBoy->id)->exists()) {
-            return back()->withErrors(['delete' => 'This record has business history and cannot be deleted. Deactivate it instead.']);
+
+        if (DB::table('customer_ledger')->where('created_by_user_id', $deliveryBoy->id)->exists()) {
+            return back()
+                ->withErrors([
+                    'delete' => 'This record has business history and cannot be deleted. Deactivate it instead.',
+                ]);
         }
 
         DB::transaction(function () use (
@@ -370,7 +367,7 @@ class DeliveryBoyController extends Controller
         ?int $deliveryBoyId = null
     ) {
         return $request->validate([
-            'password' => [$deliveryBoyId ? 'nullable' : 'required', 'confirmed', \Illuminate\Validation\Rules\Password::min(12)],
+            'password' => [$deliveryBoyId ? 'nullable' : 'required', 'confirmed', Password::min(12)],
             'name' => [
                 'required',
                 'string',
@@ -386,11 +383,10 @@ class DeliveryBoyController extends Controller
                     'mobile'
                 )
                     ->where(
-                        fn ($query) =>
-                            $query->where(
-                                'client_id',
-                                $clientId
-                            )
+                        fn ($query) => $query->where(
+                            'client_id',
+                            $clientId
+                        )
                     )
                     ->ignore(
                         $deliveryBoyId
@@ -410,11 +406,10 @@ class DeliveryBoyController extends Controller
                     'delivery_routes',
                     'id'
                 )->where(
-                    fn ($query) =>
-                        $query->where(
-                            'client_id',
-                            $clientId
-                        )
+                    fn ($query) => $query->where(
+                        'client_id',
+                        $clientId
+                    )
                 ),
             ],
 
@@ -476,12 +471,10 @@ class DeliveryBoyController extends Controller
             ->lockForUpdate()
             ->first();
 
-        if (!$route) {
-            throw ValidationException
-                ::withMessages([
-                    'route_id' =>
-                        'Selected route does not exist.',
-                ]);
+        if (! $route) {
+            throw ValidationException::withMessages([
+                'route_id' => 'Selected route does not exist.',
+            ]);
         }
 
         /*
@@ -489,10 +482,12 @@ class DeliveryBoyController extends Controller
          * REAL delivery boy ke paas hai.
          */
         if (
-            !empty($route->delivery_boy_id)
+
+            ! empty($route->delivery_boy_id)
             && $route->delivery_boy_id != 0
             && $route->delivery_boy_id
-                != $deliveryBoyId
+                            != $deliveryBoyId
+
         ) {
 
             $assignedBoy =
@@ -514,13 +509,11 @@ class DeliveryBoyController extends Controller
 
             if ($assignedBoy) {
 
-                throw ValidationException
-                    ::withMessages([
-                        'route_id' =>
-                            'This route is already assigned to '
-                            . $assignedBoy->name
-                            . '.',
-                    ]);
+                throw ValidationException::withMessages([
+                    'route_id' => 'This route is already assigned to '
+                        .$assignedBoy->name
+                        .'.',
+                ]);
             }
         }
 
@@ -534,8 +527,7 @@ class DeliveryBoyController extends Controller
                 $clientId
             )
             ->update([
-                'delivery_boy_id' =>
-                    $deliveryBoyId,
+                'delivery_boy_id' => $deliveryBoyId,
 
                 'updated_at' => now(),
             ]);
@@ -547,7 +539,7 @@ class DeliveryBoyController extends Controller
     private function checkDeliveryBoy(User $deliveryBoy, int $clientId): void
     {
         abort_unless((int) $deliveryBoy->client_id === $clientId
-            && $deliveryBoy->role() === \App\Enums\Role::DeliveryBoy, 403);
+            && $deliveryBoy->role() === Role::DeliveryBoy, 403);
     }
 
     private function getRoutes(
@@ -559,6 +551,7 @@ class DeliveryBoyController extends Controller
             ->where('status', 1)
             ->where(function ($query) use ($currentDeliveryBoyId) {
                 $query->where('delivery_boy_id', 0);
+
                 if ($currentDeliveryBoyId !== null) {
                     $query->orWhere('delivery_boy_id', $currentDeliveryBoyId);
                 }

@@ -9,14 +9,16 @@ const props = defineProps({
         type: Object,
         default: null,
     },
-
     categories: {
         type: Array,
         default: () => [],
     },
 })
 
-const rate = useForm({ rate: '', effective_from: '' })
+const rate = useForm({
+    rate: '',
+    effective_from: '',
+})
 
 const isEdit = computed(() => Boolean(props.product))
 
@@ -47,11 +49,7 @@ const submit = () => {
         </template>
 
         <template #subtitle>
-            {{
-                isEdit
-                    ? 'Update product information'
-                    : 'Add a product to your catalogue'
-            }}
+            {{ isEdit ? 'Update product information' : 'Add a product to your catalogue' }}
         </template>
 
         <Link
@@ -73,18 +71,16 @@ const submit = () => {
                 <div class="form-grid">
                     <!-- Name -->
                     <div class="field full">
-                        <label>
-                            Product Name
-                        </label>
+                        <label>Product Name</label>
 
                         <input
                             v-model="form.name"
                             type="text"
                             placeholder="e.g. Cow Ghee"
                             :class="{
-                                'field-error': form.errors.name
+                                'field-error': form.errors.name,
                             }"
-                        >
+                        />
 
                         <div
                             v-if="form.errors.name"
@@ -96,19 +92,15 @@ const submit = () => {
 
                     <!-- Category -->
                     <div class="field">
-                        <label>
-                            Category
-                        </label>
+                        <label>Category</label>
 
                         <select
                             v-model="form.category_id"
                             :class="{
-                                'field-error': form.errors.category_id
+                                'field-error': form.errors.category_id,
                             }"
                         >
-                            <option value="">
-                                Select category
-                            </option>
+                            <option value="">Select category</option>
 
                             <option
                                 v-for="category in categories"
@@ -129,18 +121,16 @@ const submit = () => {
 
                     <!-- SKU -->
                     <div class="field">
-                        <label>
-                            SKU
-                        </label>
+                        <label>SKU</label>
 
                         <input
                             v-model="form.sku"
                             type="text"
                             placeholder="e.g. MLK-FC1"
                             :class="{
-                                'field-error': form.errors.sku
+                                'field-error': form.errors.sku,
                             }"
-                        >
+                        />
 
                         <div
                             v-if="form.errors.sku"
@@ -152,44 +142,26 @@ const submit = () => {
 
                     <!-- Unit -->
                     <div class="field">
-                        <label>
-                            Unit
-                        </label>
+                        <label>Unit</label>
 
-                        <select
-                            v-model.number="form.unit_type"
-                        >
-                            <option :value="1">
-                                Litre (L)
-                            </option>
+                        <select v-model.number="form.unit_type">
+                            <option :value="1">Litre (L)</option>
 
-                            <option :value="2">
-                                Millilitre (ml)
-                            </option>
+                            <option :value="2">Millilitre (ml)</option>
 
-                            <option :value="3">
-                                Kilogram (kg)
-                            </option>
+                            <option :value="3">Kilogram (kg)</option>
 
-                            <option :value="4">
-                                Gram (g)
-                            </option>
+                            <option :value="4">Gram (g)</option>
 
-                            <option :value="5">
-                                Piece
-                            </option>
+                            <option :value="5">Piece</option>
 
-                            <option :value="6">
-                                Packet
-                            </option>
+                            <option :value="6">Packet</option>
                         </select>
                     </div>
 
                     <!-- Rate -->
                     <div class="field">
-                        <label>
-                            Rate (₹)
-                        </label>
+                        <label>Rate (₹)</label>
 
                         <input
                             v-model="form.base_rate"
@@ -198,9 +170,9 @@ const submit = () => {
                             step="0.01"
                             placeholder="e.g. 60"
                             :class="{
-                                'field-error': form.errors.base_rate
+                                'field-error': form.errors.base_rate,
                             }"
-                        >
+                        />
 
                         <div
                             v-if="form.errors.base_rate"
@@ -214,25 +186,18 @@ const submit = () => {
                 <!-- Active -->
                 <div class="toggle-row">
                     <div>
-                        <div class="t-h">
-                            Active
-                        </div>
+                        <div class="t-h">Active</div>
 
-                        <div class="t-s">
-                            Available for customer selection
-                        </div>
+                        <div class="t-s">Available for customer selection</div>
                     </div>
 
                     <button
                         type="button"
                         class="switch"
                         :class="{
-                            on: Number(form.status) === 1
+                            on: Number(form.status) === 1,
                         }"
-                        @click="
-                            form.status =
-                                Number(form.status) === 1 ? 0 : 1
-                        "
+                        @click="form.status = Number(form.status) === 1 ? 0 : 1"
                     ></button>
                 </div>
             </div>
@@ -244,23 +209,76 @@ const submit = () => {
             >
                 <i class="bi bi-floppy"></i>
 
-                {{
-                    form.processing
-                        ? 'Saving...'
-                        : isEdit
-                            ? 'Update Product'
-                            : 'Save Product'
-                }}
+                {{ form.processing ? 'Saving...' : isEdit ? 'Update Product' : 'Save Product' }}
             </button>
         </form>
-        <section v-if="product" class="panel">
-            <div class="panel-head"><h3>Rate History</h3></div>
-            <div class="table-scroll"><table><thead><tr><th>Effective from</th><th>Rate</th></tr></thead><tbody><tr v-for="entry in rates" :key="entry.id"><td>{{ entry.effective_from }}</td><td>₹{{ entry.rate }}</td></tr><tr v-if="!rates.length"><td colspan="2">No historical rates recorded.</td></tr></tbody></table></div>
-            <form class="form-grid" @submit.prevent="rate.post(`/products/${product.id}/rates`)">
-                <div class="field"><label for="future-rate">Future rate</label><input id="future-rate" v-model="rate.rate" type="number" min="0" step="0.01" required></div>
-                <div class="field"><label for="future-rate-date">Effective from</label><input id="future-rate-date" v-model="rate.effective_from" type="date" required></div>
-                <div class="field"><button class="btn secondary" :disabled="rate.processing">Schedule rate</button></div>
-                <p v-if="Object.keys(rate.errors).length" class="error-text">{{ Object.values(rate.errors).join(' ') }}</p>
+        <section
+            v-if="product"
+            class="panel"
+        >
+            <div class="panel-head">
+                <h3>Rate History</h3>
+            </div>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Effective from</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="entry in rates"
+                            :key="entry.id"
+                        >
+                            <td>{{ entry.effective_from }}</td>
+                            <td>₹{{ entry.rate }}</td>
+                        </tr>
+                        <tr v-if="!rates.length">
+                            <td colspan="2">No historical rates recorded.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <form
+                class="form-grid"
+                @submit.prevent="rate.post(`/products/${product.id}/rates`)"
+            >
+                <div class="field">
+                    <label for="future-rate">Future rate</label>
+                    <input
+                        id="future-rate"
+                        v-model="rate.rate"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                    />
+                </div>
+                <div class="field">
+                    <label for="future-rate-date">Effective from</label>
+                    <input
+                        id="future-rate-date"
+                        v-model="rate.effective_from"
+                        type="date"
+                        required
+                    />
+                </div>
+                <div class="field">
+                    <button
+                        class="btn secondary"
+                        :disabled="rate.processing"
+                    >
+                        Schedule rate
+                    </button>
+                </div>
+                <p
+                    v-if="Object.keys(rate.errors).length"
+                    class="error-text"
+                >
+                    {{ Object.values(rate.errors).join(' ') }}
+                </p>
             </form>
         </section>
     </AdminLayout>

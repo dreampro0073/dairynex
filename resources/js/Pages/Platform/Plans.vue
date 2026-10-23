@@ -3,16 +3,251 @@ import { Link, router, useForm } from '@inertiajs/vue3'
 import { ref } from 'vue'
 import PlatformLayout from '@/Layouts/PlatformLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
-const props = defineProps({ plans: Object, filters: Object })
-const open = ref(false), editing = ref(null)
-const filter = useForm({ search: props.filters.search || '', status: props.filters.status ?? '' })
-const form = useForm({ name: '', description: '', monthly_price: '', max_customers: '', max_users: '', status: 1 })
-const edit = plan => { editing.value = plan?.id || null; form.defaults({ name: plan?.name || '', description: plan?.description || '', monthly_price: plan?.monthly_price ?? '', max_customers: plan?.max_customers ?? '', max_users: plan?.max_users ?? '', status: plan?.status ?? 1 }); form.reset(); form.clearErrors(); open.value = true }
-const save = () => { const options = { onSuccess: () => { open.value = false; form.reset() } }; editing.value ? form.put(`/platform/plans/${editing.value}`, options) : form.post('/platform/plans', options) }
-const remove = plan => { if (window.confirm(`Delete unused plan ${plan.name}?`)) router.delete(`/platform/plans/${plan.id}`) }
+
+const props = defineProps({
+    plans: Object,
+    filters: Object,
+})
+
+const open = ref(false),
+    editing = ref(null)
+
+const filter = useForm({
+    search: props.filters.search || '',
+    status: props.filters.status ?? '',
+})
+
+const form = useForm({
+    name: '',
+    description: '',
+    monthly_price: '',
+    max_customers: '',
+    max_users: '',
+    status: 1,
+})
+
+const edit = (plan) => {
+    editing.value = plan?.id || null
+    form.defaults({
+        name: plan?.name || '',
+        description: plan?.description || '',
+        monthly_price: plan?.monthly_price ?? '',
+        max_customers: plan?.max_customers ?? '',
+        max_users: plan?.max_users ?? '',
+        status: plan?.status ?? 1,
+    })
+    form.reset()
+    form.clearErrors()
+    open.value = true
+}
+
+const save = () => {
+    const options = {
+        onSuccess: () => {
+            open.value = false
+            form.reset()
+        },
+    }
+    editing.value
+        ? form.put(`/platform/plans/${editing.value}`, options)
+        : form.post('/platform/plans', options)
+}
+
+const remove = (plan) => {
+    if (window.confirm(`Delete unused plan ${plan.name}?`))
+        router.delete(`/platform/plans/${plan.id}`)
+}
 </script>
-<template><PlatformLayout title="Plans" meta="SaaS pricing and capacity"><template #actions><button class="btn sm" @click="edit(null)">+ Add Plan</button></template>
-    <section class="panel"><form class="filters" @submit.prevent="filter.get('/platform/plans', { preserveState: true })"><label>Search<input v-model="filter.search" placeholder="Plan name"></label><label>Status<select v-model="filter.status"><option value="">All</option><option value="1">Active</option><option value="0">Inactive</option></select></label><button class="btn sm">Filter</button><Link href="/platform/plans" class="btn secondary sm">Clear</Link></form></section>
-    <form v-if="open" class="panel section-space" @submit.prevent="save"><div class="panel-head"><h3>{{ editing ? 'Edit Plan' : 'Add Plan' }}</h3></div><div class="form-grid"><div class="field"><label for="name">Plan Name</label><input id="name" v-model="form.name" required maxlength="100"></div><div class="field"><label for="price">Monthly Price (INR)</label><input id="price" v-model="form.monthly_price" required type="number" min="0" max="99999999.99" step="0.01"></div><div class="field"><label for="customers">Maximum Customers (blank = unlimited)</label><input id="customers" v-model="form.max_customers" type="number" min="1"></div><div class="field"><label for="users">Maximum Users (blank = unlimited)</label><input id="users" v-model="form.max_users" type="number" min="1"></div><div class="field"><label for="plan-status">Status</label><select id="plan-status" v-model="form.status"><option :value="1">Active</option><option :value="0">Inactive</option></select></div><div class="field full"><label for="description">Description / Features (one per line)</label><textarea id="description" v-model="form.description" maxlength="5000"></textarea></div></div><div class="form-actions"><button class="btn sm" :disabled="form.processing">Save Plan</button><button type="button" class="btn secondary sm" @click="open = false">Cancel</button></div></form>
-    <div class="grid-3 section-space"><article v-for="(plan, i) in plans.data" :key="plan.id" class="plan-card" :class="{ highlight: i === 1 }"><div class="pname">{{ plan.name }} <span class="badge" :class="plan.status === 1 ? 'ok' : 'due'">{{ plan.status === 1 ? 'Active' : 'Inactive' }}</span></div><div class="pprice">₹{{ Number(plan.monthly_price).toLocaleString('en-IN') }}<span>/mo</span></div><ul><li>{{ plan.max_customers ? `Up to ${plan.max_customers} customers` : 'Unlimited customers' }}</li><li>{{ plan.max_users ? `Up to ${plan.max_users} users` : 'Unlimited users' }}</li><li v-for="(line, index) in (plan.description || '').split('\n').filter(Boolean)" :key="index">{{ line }}</li></ul><p class="muted">{{ plan.subscriptions_count }} historical subscriptions</p><div class="action-row"><button class="btn secondary" @click="edit(plan)">Edit Plan</button><button v-if="!plan.subscriptions_count" class="btn secondary sm" @click="remove(plan)">Delete</button></div></article></div><div v-if="!plans.data.length" class="empty">No plans found. Add a plan to begin.</div><Pagination :data="plans" />
-</PlatformLayout></template>
+
+<template>
+    <PlatformLayout
+        title="Plans"
+        meta="SaaS pricing and capacity"
+    >
+        <template #actions>
+            <button
+                class="btn sm"
+                @click="edit(null)"
+            >
+                + Add Plan
+            </button>
+        </template>
+        <section class="panel">
+            <form
+                class="filters"
+                @submit.prevent="filter.get('/platform/plans', { preserveState: true })"
+            >
+                <label>
+                    Search
+                    <input
+                        v-model="filter.search"
+                        placeholder="Plan name"
+                    />
+                </label>
+                <label>
+                    Status
+                    <select v-model="filter.status">
+                        <option value="">All</option>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </label>
+                <button class="btn sm">Filter</button>
+                <Link
+                    href="/platform/plans"
+                    class="btn secondary sm"
+                >
+                    Clear
+                </Link>
+            </form>
+        </section>
+        <form
+            v-if="open"
+            class="panel section-space"
+            @submit.prevent="save"
+        >
+            <div class="panel-head">
+                <h3>{{ editing ? 'Edit Plan' : 'Add Plan' }}</h3>
+            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="name">Plan Name</label>
+                    <input
+                        id="name"
+                        v-model="form.name"
+                        required
+                        maxlength="100"
+                    />
+                </div>
+                <div class="field">
+                    <label for="price">Monthly Price (INR)</label>
+                    <input
+                        id="price"
+                        v-model="form.monthly_price"
+                        required
+                        type="number"
+                        min="0"
+                        max="99999999.99"
+                        step="0.01"
+                    />
+                </div>
+                <div class="field">
+                    <label for="customers">Maximum Customers (blank = unlimited)</label>
+                    <input
+                        id="customers"
+                        v-model="form.max_customers"
+                        type="number"
+                        min="1"
+                    />
+                </div>
+                <div class="field">
+                    <label for="users">Maximum Users (blank = unlimited)</label>
+                    <input
+                        id="users"
+                        v-model="form.max_users"
+                        type="number"
+                        min="1"
+                    />
+                </div>
+                <div class="field">
+                    <label for="plan-status">Status</label>
+                    <select
+                        id="plan-status"
+                        v-model="form.status"
+                    >
+                        <option :value="1">Active</option>
+                        <option :value="0">Inactive</option>
+                    </select>
+                </div>
+                <div class="field full">
+                    <label for="description">Description / Features (one per line)</label>
+                    <textarea
+                        id="description"
+                        v-model="form.description"
+                        maxlength="5000"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button
+                    class="btn sm"
+                    :disabled="form.processing"
+                >
+                    Save Plan
+                </button>
+                <button
+                    type="button"
+                    class="btn secondary sm"
+                    @click="open = false"
+                >
+                    Cancel
+                </button>
+            </div>
+        </form>
+        <div class="grid-3 section-space">
+            <article
+                v-for="(plan, i) in plans.data"
+                :key="plan.id"
+                class="plan-card"
+                :class="{ highlight: i === 1 }"
+            >
+                <div class="pname">
+                    {{ plan.name }}
+                    <span
+                        class="badge"
+                        :class="plan.status === 1 ? 'ok' : 'due'"
+                    >
+                        {{ plan.status === 1 ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+                <div class="pprice">
+                    ₹{{ Number(plan.monthly_price).toLocaleString('en-IN') }}
+                    <span>/mo</span>
+                </div>
+                <ul>
+                    <li>
+                        {{
+                            plan.max_customers
+                                ? `Up to ${plan.max_customers} customers`
+                                : 'Unlimited customers'
+                        }}
+                    </li>
+                    <li>
+                        {{ plan.max_users ? `Up to ${plan.max_users} users` : 'Unlimited users' }}
+                    </li>
+                    <li
+                        v-for="(line, index) in (plan.description || '')
+                            .split('\n')
+                            .filter(Boolean)"
+                        :key="index"
+                    >
+                        {{ line }}
+                    </li>
+                </ul>
+                <p class="muted">{{ plan.subscriptions_count }} historical subscriptions</p>
+                <div class="action-row">
+                    <button
+                        class="btn secondary"
+                        @click="edit(plan)"
+                    >
+                        Edit Plan
+                    </button>
+                    <button
+                        v-if="!plan.subscriptions_count"
+                        class="btn secondary sm"
+                        @click="remove(plan)"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </article>
+        </div>
+        <div
+            v-if="!plans.data.length"
+            class="empty"
+        >
+            No plans found. Add a plan to begin.
+        </div>
+        <Pagination :data="plans" />
+    </PlatformLayout>
+</template>

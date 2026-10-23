@@ -7,8 +7,18 @@ const page = usePage()
 const sidebarOpen = ref(false)
 
 const currentUrl = computed(() => page.url)
-watch(currentUrl, () => { sidebarOpen.value = false })
-const userInitials = computed(() => (page.props.auth?.user?.name ?? 'DN').split(' ').map(part => part[0]).slice(0, 2).join(''))
+
+watch(currentUrl, () => {
+    sidebarOpen.value = false
+})
+
+const userInitials = computed(() =>
+    (page.props.auth?.user?.name ?? 'DN')
+        .split(' ')
+        .map((part) => part[0])
+        .slice(0, 2)
+        .join(''),
+)
 
 const isActive = (path) => {
     return currentUrl.value.startsWith(path)
@@ -79,9 +89,7 @@ const closeSidebar = () => {
                         href="/products"
                         class="nav-item"
                         :class="{
-                            current:
-                                isActive('/products') &&
-                                !isActive('/categories')
+                            current: isActive('/products') && !isActive('/categories'),
                         }"
                     >
                         <span class="ic">
@@ -119,8 +127,7 @@ const closeSidebar = () => {
                         href="/quantity-change-requests"
                         class="nav-item"
                         :class="{
-                            current:
-                                isActive('/quantity-change-requests')
+                            current: isActive('/quantity-change-requests'),
                         }"
                     >
                         <span class="ic">
@@ -142,14 +149,35 @@ const closeSidebar = () => {
                         Deliveries
                     </Link>
 
-                    <Link href="/quick-sale" class="nav-item" :class="{ current: isActive('/quick-sale') }">
-                        <span class="ic"><i class="bi bi-cart-plus"></i></span> Quick Sale
+                    <Link
+                        href="/quick-sale"
+                        class="nav-item"
+                        :class="{ current: isActive('/quick-sale') }"
+                    >
+                        <span class="ic">
+                            <i class="bi bi-cart-plus"></i>
+                        </span>
+                        Quick Sale
                     </Link>
-                    <Link href="/walk-in-sales" class="nav-item" :class="{ current: isActive('/walk-in-sales') }">
-                        <span class="ic"><i class="bi bi-receipt-cutoff"></i></span> Walk-in Sales
+                    <Link
+                        href="/walk-in-sales"
+                        class="nav-item"
+                        :class="{ current: isActive('/walk-in-sales') }"
+                    >
+                        <span class="ic">
+                            <i class="bi bi-receipt-cutoff"></i>
+                        </span>
+                        Walk-in Sales
                     </Link>
-                    <Link href="/daily-sales-report" class="nav-item" :class="{ current: isActive('/daily-sales-report') }">
-                        <span class="ic"><i class="bi bi-bar-chart-line"></i></span> Daily Sales Report
+                    <Link
+                        href="/daily-sales-report"
+                        class="nav-item"
+                        :class="{ current: isActive('/daily-sales-report') }"
+                    >
+                        <span class="ic">
+                            <i class="bi bi-bar-chart-line"></i>
+                        </span>
+                        Daily Sales Report
                     </Link>
 
                     <Link
@@ -175,14 +203,10 @@ const closeSidebar = () => {
 
                         Delivery Boys
                     </Link>
-
-
                 </div>
 
                 <div class="nav-group">
-                    <div class="nav-group-label">
-                        MONEY
-                    </div>
+                    <div class="nav-group-label">MONEY</div>
 
                     <Link
                         href="/payments"
@@ -237,9 +261,7 @@ const closeSidebar = () => {
 
                     <div>
                         <div class="title">
-                            <slot name="title">
-                                Admin
-                            </slot>
+                            <slot name="title">Admin</slot>
                         </div>
 
                         <div class="meta">
@@ -253,10 +275,23 @@ const closeSidebar = () => {
                             Search customer, mobile, invoice...
                         </div>
 
-                        <Link href="/notifications" class="btn secondary sm" aria-label="Notifications"><i class="bi bi-bell"></i></Link>
+                        <Link
+                            href="/notifications"
+                            class="btn secondary sm"
+                            aria-label="Notifications"
+                        >
+                            <i class="bi bi-bell"></i>
+                        </Link>
 
                         <slot name="header-action"></slot>
-                        <Link href="/logout" method="post" as="button" class="btn secondary sm">Sign out</Link>
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            class="btn secondary sm"
+                        >
+                            Sign out
+                        </Link>
 
                         <div class="avatar">
                             {{ userInitials }}
@@ -266,10 +301,35 @@ const closeSidebar = () => {
 
                 <section class="content">
                     <div class="content-inner">
-                        <div v-if="page.props.platform?.notice" class="alert alert-info" style="white-space: pre-wrap" role="status">{{ page.props.platform.notice }}</div>
-                        <div v-if="page.props.flash?.success" class="alert alert-success" role="status">{{ page.props.flash.success }}</div>
-                        <div v-if="page.props.flash?.error" class="alert alert-danger" role="alert">{{ page.props.flash.error }}</div>
-                        <div v-if="page.props.errors?.delete" class="alert alert-danger" role="alert">{{ page.props.errors.delete }}</div>
+                        <div
+                            v-if="page.props.platform?.notice"
+                            class="alert alert-info"
+                            style="white-space: pre-wrap"
+                            role="status"
+                        >
+                            {{ page.props.platform.notice }}
+                        </div>
+                        <div
+                            v-if="page.props.flash?.success"
+                            class="alert alert-success"
+                            role="status"
+                        >
+                            {{ page.props.flash.success }}
+                        </div>
+                        <div
+                            v-if="page.props.flash?.error"
+                            class="alert alert-danger"
+                            role="alert"
+                        >
+                            {{ page.props.flash.error }}
+                        </div>
+                        <div
+                            v-if="page.props.errors?.delete"
+                            class="alert alert-danger"
+                            role="alert"
+                        >
+                            {{ page.props.errors.delete }}
+                        </div>
                         <slot />
                     </div>
                 </section>

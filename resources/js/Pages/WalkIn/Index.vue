@@ -1,9 +1,137 @@
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue'; import Pagination from '@/Components/Pagination.vue'; import { Head,Link,router } from '@inertiajs/vue3'; import { reactive } from 'vue'
-const props=defineProps({title:String,sales:Object,filters:Object,summary:Object}); const f=reactive({from:props.filters.from||'',to:props.filters.to||'',q:props.filters.q||''})
+import AdminLayout from '@/Layouts/AdminLayout.vue'
+import Pagination from '@/Components/Pagination.vue'
+import { Head, Link, router } from '@inertiajs/vue3'
+import { reactive } from 'vue'
+
+const props = defineProps({
+    title: String,
+    sales: Object,
+    filters: Object,
+    summary: Object,
+})
+
+const f = reactive({
+    from: props.filters.from || '',
+    to: props.filters.to || '',
+    q: props.filters.q || '',
+})
 </script>
-<template><Head :title="title"/><AdminLayout><template #title>{{title}}</template>
-<div class="stat-row"><div class="stat"><div class="label">Sales · {{summary.period}}</div><div class="value">₹{{Number(summary.total).toFixed(2)}}</div></div><div class="stat"><div class="label">Cash received</div><div class="value">₹{{Number(summary.cash).toFixed(2)}}</div></div><div class="stat"><div class="label">UPI received</div><div class="value">₹{{Number(summary.upi).toFixed(2)}}</div></div><div class="stat"><div class="label">Credit / outstanding</div><div class="value">₹{{Number(summary.credit).toFixed(2)}} / ₹{{Number(summary.outstanding).toFixed(2)}}</div></div><div class="stat"><div class="label">Transactions</div><div class="value">{{summary.count}}</div></div></div>
-<div class="panel"><form class="form-grid" @submit.prevent="router.get('/walk-in-sales',f,{preserveState:true})"><label class="field"><span>From</span><input v-model="f.from" type="date"/></label><label class="field"><span>To</span><input v-model="f.to" type="date"/></label><label class="field"><span>Receipt, name or mobile</span><input v-model="f.q" type="search"/></label><button class="btn secondary">Filter</button></form>
-<div class="table-scroll"><table><thead><tr><th>Receipt / time</th><th>Customer</th><th>Total</th><th>Method</th><th>Paid</th><th>Due</th><th></th></tr></thead><tbody><tr v-for="s in sales.data" :key="s.id"><td>{{s.receipt_no}}<br/><small>{{s.sold_at}}</small></td><td>{{s.customer_name||'Guest'}}<br/><small>{{s.customer_mobile}}</small></td><td>₹{{s.total}}</td><td>{{s.payment_method_id===1?'Cash':s.payment_method_id===2?'UPI':'Credit'}}</td><td>₹{{s.paid_amount}}</td><td>₹{{s.due_amount}}</td><td><Link :href="`/walk-in-sales/${s.id}`" class="link">Receipt</Link></td></tr><tr v-if="!sales.data.length"><td colspan="7">No walk-in sales found.</td></tr></tbody></table></div><Pagination :data="sales"/></div>
-</AdminLayout></template>
+
+<template>
+    <Head :title="title" />
+    <AdminLayout>
+        <template #title>{{ title }}</template>
+        <div class="stat-row">
+            <div class="stat">
+                <div class="label">Sales · {{ summary.period }}</div>
+                <div class="value">₹{{ Number(summary.total).toFixed(2) }}</div>
+            </div>
+            <div class="stat">
+                <div class="label">Cash received</div>
+                <div class="value">₹{{ Number(summary.cash).toFixed(2) }}</div>
+            </div>
+            <div class="stat">
+                <div class="label">UPI received</div>
+                <div class="value">₹{{ Number(summary.upi).toFixed(2) }}</div>
+            </div>
+            <div class="stat">
+                <div class="label">Credit / outstanding</div>
+                <div class="value">
+                    ₹{{ Number(summary.credit).toFixed(2) }} / ₹{{
+                        Number(summary.outstanding).toFixed(2)
+                    }}
+                </div>
+            </div>
+            <div class="stat">
+                <div class="label">Transactions</div>
+                <div class="value">{{ summary.count }}</div>
+            </div>
+        </div>
+        <div class="panel">
+            <form
+                class="form-grid"
+                @submit.prevent="router.get('/walk-in-sales', f, { preserveState: true })"
+            >
+                <label class="field">
+                    <span>From</span>
+                    <input
+                        v-model="f.from"
+                        type="date"
+                    />
+                </label>
+                <label class="field">
+                    <span>To</span>
+                    <input
+                        v-model="f.to"
+                        type="date"
+                    />
+                </label>
+                <label class="field">
+                    <span>Receipt, name or mobile</span>
+                    <input
+                        v-model="f.q"
+                        type="search"
+                    />
+                </label>
+                <button class="btn secondary">Filter</button>
+            </form>
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Receipt / time</th>
+                            <th>Customer</th>
+                            <th>Total</th>
+                            <th>Method</th>
+                            <th>Paid</th>
+                            <th>Due</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="s in sales.data"
+                            :key="s.id"
+                        >
+                            <td>
+                                {{ s.receipt_no }}
+                                <br />
+                                <small>{{ s.sold_at }}</small>
+                            </td>
+                            <td>
+                                {{ s.customer_name || 'Guest' }}
+                                <br />
+                                <small>{{ s.customer_mobile }}</small>
+                            </td>
+                            <td>₹{{ s.total }}</td>
+                            <td>
+                                {{
+                                    s.payment_method_id === 1
+                                        ? 'Cash'
+                                        : s.payment_method_id === 2
+                                          ? 'UPI'
+                                          : 'Credit'
+                                }}
+                            </td>
+                            <td>₹{{ s.paid_amount }}</td>
+                            <td>₹{{ s.due_amount }}</td>
+                            <td>
+                                <Link
+                                    :href="`/walk-in-sales/${s.id}`"
+                                    class="link"
+                                >
+                                    Receipt
+                                </Link>
+                            </td>
+                        </tr>
+                        <tr v-if="!sales.data.length">
+                            <td colspan="7">No walk-in sales found.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <Pagination :data="sales" />
+        </div>
+    </AdminLayout>
+</template>

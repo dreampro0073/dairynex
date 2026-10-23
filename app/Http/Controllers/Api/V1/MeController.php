@@ -11,7 +11,16 @@ class MeController extends Controller
     {
         $user = $request->user();
 
-        return response()->json(['data' => ['id' => $user->id, 'name' => $user->name, 'mobile' => $user->mobile,
-            'email' => $user->email, 'client_id' => $user->client_id, 'role' => $user->role()?->label()]]);
+        return response()
+            ->json([
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'mobile' => $user->mobile,
+                    'email' => $user->email,
+                    'client_id' => $user->client_id,
+                    'role' => $user->role()?->label(),
+                ],
+            ]);
     }
 }

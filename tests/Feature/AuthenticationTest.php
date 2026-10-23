@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
-use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -19,6 +18,7 @@ class AuthenticationTest extends BusinessTestCase
             $user = $this->account($role, $role === Role::SuperAdmin ? null : 1);
             $this->post('/login', ['mobile' => $user->mobile, 'password' => 'test-password-123'])
                 ->assertRedirect($role->home());
+
             $this->assertAuthenticatedAs($user);
             $this->post('/logout')->assertRedirect('/login');
             $this->assertGuest();
@@ -29,18 +29,22 @@ class AuthenticationTest extends BusinessTestCase
     {
         $users = [
             $this->account(attributes: ['status' => 0]),
-            $this->account(3), $this->account(4),
+            $this->account(3),
+            $this->account(4),
             $this->account(clientId: null),
         ];
+
         $empty = $this->account();
         DB::table('users')->where('id', $empty->id)->update(['password' => '']);
         $users[] = $empty;
         $suspended = $this->account(clientId: 2);
         DB::table('clients')->where('id', 2)->update(['status' => 0]);
         $users[] = $suspended;
+
         foreach ($users as $user) {
             $this->post('/login', ['mobile' => $user->mobile, 'password' => 'test-password-123'])
                 ->assertSessionHasErrors('mobile');
+
             $this->assertGuest();
         }
     }
@@ -49,17 +53,25 @@ class AuthenticationTest extends BusinessTestCase
     {
         $first = $this->account(attributes: ['mobile' => '9876543210']);
         $this->account(clientId: 2, attributes: ['mobile' => $first->mobile, 'password' => 'different-password']);
-        $this->post('/login', ['mobile' => $first->mobile, 'password' => 'test-password-123'])->assertSessionHasErrors('mobile');
-        $this->post('/login', ['client_id' => 2, 'mobile' => $first->mobile, 'password' => 'test-password-123'])->assertSessionHasErrors('mobile');
-        $this->post('/login', ['client_id' => 1, 'mobile' => $first->mobile, 'password' => 'test-password-123'])->assertRedirect('/dashboard');
+        $this->post('/login', ['mobile' => $first->mobile, 'password' => 'test-password-123'])
+            ->assertSessionHasErrors('mobile');
+
+        $this->post('/login', ['client_id' => 2, 'mobile' => $first->mobile, 'password' => 'test-password-123'])
+            ->assertSessionHasErrors('mobile');
+
+        $this->post('/login', ['client_id' => 1, 'mobile' => $first->mobile, 'password' => 'test-password-123'])
+            ->assertRedirect('/dashboard');
+
         $this->assertAuthenticatedAs($first);
     }
 
     public function test_login_is_rate_limited(): void
     {
         for ($i = 0; $i < 10; $i++) {
-            $this->post('/login', ['mobile' => 'unknown', 'password' => 'wrong'])->assertSessionHasErrors('mobile');
+            $this->post('/login', ['mobile' => 'unknown', 'password' => 'wrong'])
+                ->assertSessionHasErrors('mobile');
         }
+
         $this->post('/login', ['mobile' => 'unknown', 'password' => 'wrong'])->assertStatus(429);
     }
 
@@ -70,7 +82,13 @@ class AuthenticationTest extends BusinessTestCase
         $this->post('/forgot-password', ['email' => $user->email])->assertSessionHas('success');
         Notification::assertSentTo($user, ResetPassword::class);
         $token = Password::createToken($user);
-        $data = ['email' => $user->email, 'token' => $token, 'password' => 'new-password-123', 'password_confirmation' => 'new-password-123'];
+        $data = [
+            'email' => $user->email,
+            'token' => $token,
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ];
+
         $this->post('/reset-password', $data)->assertRedirect('/login');
         $this->assertTrue(Hash::check('new-password-123', $user->fresh()->password));
         $this->post('/reset-password', $data)->assertSessionHasErrors('email');
@@ -83,7 +101,13 @@ class AuthenticationTest extends BusinessTestCase
         $this->account(clientId: 2, attributes: ['email' => $user->email]);
         $this->post('/forgot-password', ['email' => $user->email])->assertSessionHas('success');
         Notification::assertNothingSent();
-        $this->post('/reset-password', ['email' => $user->email, 'token' => 'invalid', 'password' => 'new-password-123', 'password_confirmation' => 'new-password-123'])->assertSessionHasErrors('email');
+        $this->post('/reset-password', [
+            'email' => $user->email,
+            'token' => 'invalid',
+            'password' => 'new-password-123',
+            'password_confirmation' => 'new-password-123',
+        ])
+            ->assertSessionHasErrors('email');
     }
 
     public function test_active_sessions_lose_access_after_account_or_dairy_is_disabled(): void

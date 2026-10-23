@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\PlatformSettings;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -37,7 +38,9 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'platform' => fn () => collect(\App\Support\PlatformSettings::values())->only(['platform_name', 'support_email', 'currency', 'timezone', 'notice'])->all(),
+            'platform' => fn () => collect(PlatformSettings::values())
+                ->only(['platform_name', 'support_email', 'currency', 'timezone', 'notice'])
+                ->all(),
             'auth' => [
                 'user' => fn () => $request->user() ? [
                     'id' => $request->user()->id,

@@ -7,7 +7,6 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-
     stats: {
         type: Object,
         default: () => ({
@@ -48,42 +47,28 @@ const statusClass = (status) => {
 }
 
 const money = (value) => {
-    return Number(value || 0).toLocaleString(
-        'en-IN',
-        {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-        }
-    )
+    return Number(value || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    })
 }
 
 const deleteCustomer = (customer) => {
-    if (
-        !confirm(
-            `Are you sure you want to delete "${customer.name}"?`
-        )
-    ) {
+    if (!confirm(`Are you sure you want to delete "${customer.name}"?`)) {
         return
     }
 
-    router.delete(
-        `/customers/${customer.id}`,
-        {
-            preserveScroll: true,
-        }
-    )
+    router.delete(`/customers/${customer.id}`, {
+        preserveScroll: true,
+    })
 }
 </script>
 
 <template>
     <AdminLayout>
-        <template #title>
-            Customers
-        </template>
+        <template #title>Customers</template>
 
-        <template #subtitle>
-            {{ stats.total }} customers
-        </template>
+        <template #subtitle>{{ stats.total }} customers</template>
 
         <template #header-action>
             <Link
@@ -95,70 +80,52 @@ const deleteCustomer = (customer) => {
             </Link>
         </template>
 
-       <!-- Stats -->
-		<div class="stat-row">
-		    <div class="stat">
-		        <div class="label">
-		            Total Customers
-		        </div>
+        <!-- Stats -->
+        <div class="stat-row">
+            <div class="stat">
+                <div class="label">Total Customers</div>
 
-		        <div class="value">
-		            {{ Number(stats.total || 0).toLocaleString('en-IN') }}
-		        </div>
+                <div class="value">
+                    {{ Number(stats.total || 0).toLocaleString('en-IN') }}
+                </div>
 
-		        <div class="sub">
-		            on {{ stats.routes || 0 }} routes
-		        </div>
-		    </div>
+                <div class="sub">on {{ stats.routes || 0 }} routes</div>
+            </div>
 
-		    <div class="stat blue">
-		        <div class="label">
-		            Active
-		        </div>
+            <div class="stat blue">
+                <div class="label">Active</div>
 
-		        <div class="value">
-		            {{ Number(stats.active || 0).toLocaleString('en-IN') }}
-		        </div>
+                <div class="value">
+                    {{ Number(stats.active || 0).toLocaleString('en-IN') }}
+                </div>
 
-		        <div class="sub up">
-		            {{ stats.active_percentage || 0 }}%
-		        </div>
-		    </div>
+                <div class="sub up">{{ stats.active_percentage || 0 }}%</div>
+            </div>
 
-		    <div class="stat butter">
-		        <div class="label">
-		            Paused
-		        </div>
+            <div class="stat butter">
+                <div class="label">Paused</div>
 
-		        <div class="value">
-		            {{ Number(stats.paused || 0).toLocaleString('en-IN') }}
-		        </div>
+                <div class="value">
+                    {{ Number(stats.paused || 0).toLocaleString('en-IN') }}
+                </div>
 
-		        <div class="sub">
-		            temporary hold
-		        </div>
-		    </div>
+                <div class="sub">temporary hold</div>
+            </div>
 
-		    <div class="stat danger">
-		        <div class="label">
-		            Customers with Balance
-		        </div>
+            <div class="stat danger">
+                <div class="label">Customers with Balance</div>
 
-		        <div class="value">
-		            {{ Number(stats.overdue || 0).toLocaleString('en-IN') }}
-		        </div>
+                <div class="value">
+                    {{ Number(stats.overdue || 0).toLocaleString('en-IN') }}
+                </div>
 
-		        <div class="sub down">
-		            customers
-		        </div>
-		    </div>
-		</div>
+                <div class="sub down">customers</div>
+            </div>
+        </div>
 
         <div class="panel">
             <div class="panel-head">
-                <h3>
-                    All Customers
-                </h3>
+                <h3>All Customers</h3>
 
                 <Link
                     href="/customers/create"
@@ -178,9 +145,7 @@ const deleteCustomer = (customer) => {
                             <th>Today's Qty</th>
                             <th>Status</th>
 
-                            <th class="num">
-                                Outstanding
-                            </th>
+                            <th class="num">Outstanding</th>
 
                             <th>Actions</th>
                         </tr>
@@ -209,49 +174,38 @@ const deleteCustomer = (customer) => {
                             </td>
 
                             <td>
-                                {{
-                                    customerType(
-                                        customer.customer_type
-                                    )
-                                }}
+                                {{ customerType(customer.customer_type) }}
                             </td>
 
                             <td>
                                 {{ customer.today_qty }}
-                                <div class="meta">PIN {{ customer.delivery_pin_required ? 'enabled' : 'disabled' }}</div>
+                                <div class="meta">
+                                    PIN
+                                    {{ customer.delivery_pin_required ? 'enabled' : 'disabled' }}
+                                </div>
                             </td>
 
                             <td>
                                 <span
                                     class="badge"
-                                    :class="
-                                        statusClass(
-                                            customer.status
-                                        )
-                                    "
+                                    :class="statusClass(customer.status)"
                                 >
-                                    {{
-                                        statusText(
-                                            customer.status
-                                        )
-                                    }}
+                                    {{ statusText(customer.status) }}
                                 </span>
                             </td>
 
-                            <td class="num">
-                                ₹{{
-                                    money(
-                                        customer.outstanding
-                                    )
-                                }}
-                            </td>
+                            <td class="num">₹{{ money(customer.outstanding) }}</td>
 
                             <td>
-                                <Link :href="`/customers/${customer.id}`" class="link">View</Link> ·
                                 <Link
-                                    :href="
-                                        `/customers/${customer.id}/edit`
-                                    "
+                                    :href="`/customers/${customer.id}`"
+                                    class="link"
+                                >
+                                    View
+                                </Link>
+                                ·
+                                <Link
+                                    :href="`/customers/${customer.id}/edit`"
                                     class="link"
                                 >
                                     Edit
@@ -262,45 +216,29 @@ const deleteCustomer = (customer) => {
                                 <button
                                     type="button"
                                     class="link-action danger"
-                                    @click="
-                                        deleteCustomer(
-                                            customer
-                                        )
-                                    "
+                                    @click="deleteCustomer(customer)"
                                 >
                                     Delete
                                 </button>
                             </td>
                         </tr>
 
-                        <tr
-                            v-if="
-                                customers.length === 0
-                            "
-                        >
+                        <tr v-if="customers.length === 0">
                             <td colspan="7">
                                 <div class="empty-state">
                                     <div class="ic">
-                                        <i
-                                            class="bi bi-people"
-                                        ></i>
+                                        <i class="bi bi-people"></i>
                                     </div>
 
-                                    <div class="t">
-                                        No customers found
-                                    </div>
+                                    <div class="t">No customers found</div>
 
-                                    <div class="s">
-                                        Add your first customer.
-                                    </div>
+                                    <div class="s">Add your first customer.</div>
 
                                     <Link
                                         href="/customers/create"
                                         class="btn sm"
                                     >
-                                        <i
-                                            class="bi bi-plus-lg"
-                                        ></i>
+                                        <i class="bi bi-plus-lg"></i>
                                         Add Customer
                                     </Link>
                                 </div>
