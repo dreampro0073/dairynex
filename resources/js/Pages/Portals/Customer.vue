@@ -12,6 +12,7 @@ defineProps({
     subscription: Object,
     items: Array,
     payments: Object,
+    purchases: Array,
     address: Object,
 })
 
@@ -20,6 +21,7 @@ const page = usePage()
 const tabs = [
     ['home', 'Home', 'bi-house'],
     ['bill', 'Bill', 'bi-receipt'],
+    ['purchases', 'Purchases', 'bi-basket'],
     ['subscription', 'Subscription', 'bi-arrow-repeat'],
     ['profile', 'Profile', 'bi-person'],
 ]
@@ -176,6 +178,23 @@ const deliverySummary = (delivery) => {
                     >
                         No payments recorded.
                     </p>
+                </section>
+            </template>
+            <template v-else-if="tab === 'purchases'">
+                <p class="portal-eyebrow">COUNTER PURCHASES</p>
+                <h1>Purchase history</h1>
+                <section class="portal-card">
+                    <div v-for="sale in purchases" :key="sale.id" class="portal-row portal-purchase">
+                        <span>
+                            <b>{{ sale.items.map(i => `${i.product_name} × ${i.quantity}`).join(', ') }}</b>
+                            <small>{{ sale.sold_at }} · {{ sale.receipt_no }}</small>
+                        </span>
+                        <span>
+                            <b>{{ money(sale.total) }}</b>
+                            <small>{{ sale.payment_method }} · {{ sale.due_amount > 0 ? `Outstanding ${money(sale.due_amount)}` : 'Paid' }}</small>
+                        </span>
+                    </div>
+                    <p v-if="!purchases.length" class="portal-muted">No counter purchases yet.</p>
                 </section>
             </template>
             <template v-else-if="tab === 'subscription'">

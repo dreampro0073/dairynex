@@ -128,6 +128,41 @@ class WalkInSaleService
                     'amount' => Decimal::format($line['amount']),
                     'created_at' => now(),
                 ]);
+
+                // Counter sales consume stock only when this tenant has an active
+                // main inventory location. Tenants without inventory setup retain
+                // the existing non-stock counter-sale behavior.
+                $location = DB::table('inventory_locations')
+                    ->where('client_id', $actor->client_id)
+                    ->where('location_type', 1)
+                    ->where('status', 1)
+                    ->orderBy('id')
+                    ->first();
+                if ($location) {
+                    $available = (float) DB::table('inventory_transactions')
+                        ->where('client_id', $actor->client_id)
+                        ->where('location_id', $location->id)
+                        ->where('product_id', $line['product']->id)
+                        ->sum('quantity');
+                    if ($available + 0.000001 < $line['quantity']) {
+                        throw ValidationException::withMessages([
+                            'items' => 'Insufficient stock for '.$line['product']->name.'.',
+                        ]);
+                    }
+                    DB::table('inventory_transactions')->insert([
+                        'client_id' => $actor->client_id,
+                        'location_id' => $location->id,
+                        'product_id' => $line['product']->id,
+                        'transaction_type_id' => 2,
+                        'transaction_date' => now(),
+                        'quantity' => Decimal::format(-$line['quantity'], 3),
+                        'reference_type' => 'walk_in_sale',
+                        'reference_id' => $saleId,
+                        'notes' => 'Counter sale '.$receipt,
+                        'created_by_user_id' => $actor->id,
+                        'created_at' => now(),
+                    ]);
+                }
             }
 
             if ($customer) {

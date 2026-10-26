@@ -36,7 +36,7 @@ class PortalController extends Controller
         }
 
         $tab = $request->query('tab', 'home');
-        abort_unless(in_array($tab, ['home', 'bill', 'subscription', 'profile'], true), 404);
+        abort_unless(in_array($tab, ['home', 'bill', 'purchases', 'subscription', 'profile'], true), 404);
         $deliveries = DB::table('deliveries')
             ->where('client_id', $client)
             ->where('customer_id', $customer->id);
@@ -65,6 +65,28 @@ class PortalController extends Controller
             ->orderByDesc('invoice_date')
             ->limit(12)
             ->get();
+
+        $purchases = DB::table('walk_in_sales as sales')
+            ->leftJoin('ref_payment_methods as methods', 'methods.id', '=', 'sales.payment_method_id')
+            ->where('sales.client_id', $client)
+            ->where('sales.customer_id', $customer->id)
+            ->where('sales.status', 1)
+            ->orderByDesc('sales.sold_at')
+            ->limit(50)
+            ->get([
+                'sales.id', 'sales.receipt_no', 'sales.sold_at', 'sales.total',
+                'sales.paid_amount', 'sales.due_amount', 'sales.payment_method_id',
+                DB::raw("COALESCE(methods.name, 'Credit / Outstanding') as payment_method"),
+            ]);
+
+        $purchaseIds = $purchases->pluck('id');
+        $purchaseItems = DB::table('walk_in_sale_items')
+            ->where('client_id', $client)
+            ->whereIn('sale_id', $purchaseIds)
+            ->orderBy('id')
+            ->get(['sale_id', 'product_name', 'quantity', 'rate', 'amount'])
+            ->groupBy('sale_id');
+        $purchases->each(fn ($sale) => $sale->items = $purchaseItems->get($sale->id, collect())->values());
 
         $subscription = DB::table('subscriptions')
             ->where('client_id', $client)
@@ -102,6 +124,7 @@ class PortalController extends Controller
                 ->orderBy('delivery_slot_id')
                 ->get(['id', 'delivery_date', 'delivery_slot_id', 'status_id', 'total_amount']),
             'invoices' => $invoices,
+            'purchases' => $purchases,
             'subscription' => $subscription,
             'items' => $items,
             'payments' => DB::table('payments')

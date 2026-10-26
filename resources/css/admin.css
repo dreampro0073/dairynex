@@ -2288,6 +2288,8 @@ a.btn {
     margin: 8px 0 16px;
     min-height: 44px;
 }
+.walkin-grid .panel { min-width: 0; }
+.walkin-grid .panel-head input { max-width: 240px; min-width: 0; }
 .walkin-products {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
@@ -2349,6 +2351,9 @@ a.btn {
     }
 }
 @media (max-width: 540px) {
+    .walkin-grid .panel { padding: 14px; }
+    .walkin-grid .panel-head { gap: 8px; flex-wrap: wrap; }
+    .walkin-grid .panel-head input { width: 100%; max-width: none; }
     .walkin-line {
         grid-template-columns: minmax(0, 1fr) 76px;
         gap: 8px;
@@ -2366,6 +2371,8 @@ a.btn {
     .walkin-product {
         padding: 11px;
     }
+    .walkin-line > div { min-width: 0; }
+    .walkin-line strong { overflow-wrap: anywhere; }
 }
 @media print {
     .sidebar,
