@@ -20,7 +20,7 @@ const isEdit = computed(() => Boolean(props.deliveryRoute))
 const form = useForm({
     name: props.deliveryRoute?.name ?? '',
     area_locality: props.deliveryRoute?.area_locality ?? '',
-    delivery_boy_id: props.deliveryRoute?.delivery_boy_id ?? '',
+    delivery_boy_id: props.deliveryRoute?.delivery_boy_id ?? 0,
     expected_stops: props.deliveryRoute?.expected_stops ?? '',
     status: Number(props.deliveryRoute?.status ?? 1),
 })
@@ -118,8 +118,8 @@ const submit = () => {
                                 'field-error': form.errors.delivery_boy_id
                             }"
                         >
-                            <option value="">
-                                Select Delivery Boy
+                            <option :value="0">
+                                Unassigned
                             </option>
 
                             <option

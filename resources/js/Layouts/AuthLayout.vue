@@ -1,9 +1,8 @@
 <script setup>
-import { usePage } from '@inertiajs/vue3'
+import FeedbackMessages from '@/Components/FeedbackMessages.vue'
 
 defineProps({ title: String })
 
-const page = usePage()
 </script>
 
 <template>
@@ -19,13 +18,7 @@ const page = usePage()
             <div class="panel-head">
                 <h3>{{ title }}</h3>
             </div>
-            <div
-                v-if="page.props.flash?.success"
-                class="alert alert-success"
-                role="status"
-            >
-                {{ page.props.flash.success }}
-            </div>
+            <FeedbackMessages />
             <slot />
         </div>
     </main>

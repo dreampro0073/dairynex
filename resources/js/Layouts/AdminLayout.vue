@@ -1,6 +1,7 @@
 <script setup>
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
+import FeedbackMessages from '@/Components/FeedbackMessages.vue'
 
 const page = usePage()
 
@@ -327,27 +328,7 @@ const goBack = () => {
                         >
                             {{ page.props.platform.notice }}
                         </div>
-                        <div
-                            v-if="page.props.flash?.success"
-                            class="alert alert-success"
-                            role="status"
-                        >
-                            {{ page.props.flash.success }}
-                        </div>
-                        <div
-                            v-if="page.props.flash?.error"
-                            class="alert alert-danger"
-                            role="alert"
-                        >
-                            {{ page.props.flash.error }}
-                        </div>
-                        <div
-                            v-if="page.props.errors?.delete"
-                            class="alert alert-danger"
-                            role="alert"
-                        >
-                            {{ page.props.errors.delete }}
-                        </div>
+                        <FeedbackMessages />
                         <slot />
                     </div>
                 </section>

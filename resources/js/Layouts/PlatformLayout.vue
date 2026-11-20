@@ -2,6 +2,7 @@
 import { Head, Link, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 import '@/../css/platform.css'
+import FeedbackMessages from '@/Components/FeedbackMessages.vue'
 
 defineProps({
     title: String,
@@ -133,32 +134,7 @@ const initials = computed(() =>
                 </header>
                 <main class="content">
                     <div class="content-inner">
-                        <div
-                            v-if="page.props.flash?.success"
-                            class="alert alert-success"
-                            role="status"
-                        >
-                            {{ page.props.flash.success }}
-                        </div>
-                        <div
-                            v-if="page.props.flash?.error"
-                            class="alert alert-danger"
-                            role="alert"
-                        >
-                            {{ page.props.flash.error }}
-                        </div>
-                        <div
-                            v-if="Object.keys(page.props.errors || {}).length"
-                            class="alert alert-danger"
-                            role="alert"
-                        >
-                            <div
-                                v-for="(error, key) in page.props.errors"
-                                :key="key"
-                            >
-                                {{ error }}
-                            </div>
-                        </div>
+                        <FeedbackMessages />
                         <slot />
                     </div>
                 </main>

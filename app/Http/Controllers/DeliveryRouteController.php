@@ -100,7 +100,7 @@ class DeliveryRouteController extends Controller
         DeliveryRoute::create([
             'client_id' => $clientId,
 
-            'delivery_boy_id' => $validated['delivery_boy_id'],
+            'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
 
             'name' => $validated['name'],
 
@@ -164,7 +164,7 @@ class DeliveryRouteController extends Controller
         );
 
         $deliveryRoute->update([
-            'delivery_boy_id' => $validated['delivery_boy_id'],
+            'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
 
             'name' => $validated['name'],
 
@@ -246,14 +246,20 @@ class DeliveryRouteController extends Controller
             // Restrict assignment to active delivery staff in the current dairy.
             'delivery_boy_id' => [
                 'required',
-
-                Rule::exists('users', 'id')
-                    ->where(
-                        fn ($query) => $query->where(
-                            'user_type_id',
-                            Role::DeliveryBoy->value
-                        )->where('client_id', $clientId)->where('status', 1)
-                    ),
+                'integer',
+                'min:0',
+                Rule::when(
+                    (int) $request->input('delivery_boy_id') !== 0,
+                    [
+                        Rule::exists('users', 'id')
+                            ->where(
+                                fn ($query) => $query->where(
+                                    'user_type_id',
+                                    Role::DeliveryBoy->value
+                                )->where('client_id', $clientId)->where('status', 1)
+                            ),
+                    ],
+                ),
             ],
 
             'area_locality' => [

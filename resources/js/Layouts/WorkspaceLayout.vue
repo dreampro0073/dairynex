@@ -1,6 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Link, usePage } from '@inertiajs/vue3'
+import FeedbackMessages from '@/Components/FeedbackMessages.vue'
 
 defineProps({ title: String })
 
@@ -76,13 +77,7 @@ const page = usePage()
                     Notifications
                 </Link>
             </nav>
-            <div
-                v-if="page.props.flash?.success"
-                class="alert alert-success"
-                role="status"
-            >
-                {{ page.props.flash.success }}
-            </div>
+            <FeedbackMessages />
             <slot />
         </div>
     </main>
