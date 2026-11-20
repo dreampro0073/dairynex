@@ -1,5 +1,5 @@
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link, router, usePage } from '@inertiajs/vue3'
 import { computed, ref, watch } from 'vue'
 
 const page = usePage()
@@ -26,6 +26,16 @@ const isActive = (path) => {
 
 const closeSidebar = () => {
     sidebarOpen.value = false
+}
+
+const goBack = () => {
+    if (window.history.length > 1) {
+        window.history.back()
+        return
+    }
+
+    const home = page.props.auth?.user?.role === 'super_admin' ? '/platform' : '/dashboard'
+    router.visit(home)
 }
 </script>
 
@@ -249,6 +259,14 @@ const closeSidebar = () => {
             <!-- Main -->
             <main class="main">
                 <header class="topbar">
+                    <button
+                        type="button"
+                        class="back-btn"
+                        aria-label="Go back"
+                        @click="goBack"
+                    >
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
                     <button
                         type="button"
                         class="menu-btn"

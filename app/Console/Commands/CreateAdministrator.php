@@ -36,7 +36,7 @@ class CreateAdministrator extends Command
             'name' => $this->ask('Name'),
             'mobile' => $this->ask('Mobile'),
             'email' => $this->ask('Email (optional)'),
-            'password' => $this->secret('Password (at least 12 characters)'),
+            'password' => $this->secret('Password (at least 8 characters)'),
             'password_confirmation' => $this->secret('Confirm password'),
         ];
 
@@ -44,7 +44,7 @@ class CreateAdministrator extends Command
             'name' => ['required', 'string', 'max:150'],
             'mobile' => ['required', 'digits_between:7,20'],
             'email' => ['nullable', 'email', 'max:150'],
-            'password' => ['required', 'confirmed', Password::min(12)],
+            'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         if ($validation->fails()) {

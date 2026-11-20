@@ -93,13 +93,13 @@ const link = () =>
                 </div>
                 <template v-if="!login.user_id">
                     <div class="field">
-                        <label for="login-password">Password (at least 12 characters)</label>
+                        <label for="login-password">Password (at least 8 characters)</label>
                         <input
                             id="login-password"
                             v-model="login.password"
                             type="password"
                             required
-                            minlength="12"
+                            minlength="8"
                             autocomplete="new-password"
                         />
                     </div>

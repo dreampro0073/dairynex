@@ -17,7 +17,7 @@ class ProvisioningTest extends BusinessTestCase
         $this->artisan('dairynex:provision', ['user' => $user->id])->assertExitCode(1);
         $this->assertSame(3, $user->fresh()->user_type_id);
         $this->artisan('dairynex:provision', ['user' => $user->id, '--role' => 'client_admin'])
-            ->expectsQuestion('New password (at least 12 characters)', 'provisioned-password-123')
+            ->expectsQuestion('New password (at least 8 characters)', 'provisioned-password-123')
             ->expectsQuestion('Confirm password', 'provisioned-password-123')
             ->assertExitCode(0);
 
@@ -34,7 +34,7 @@ class ProvisioningTest extends BusinessTestCase
         $this->artisan('dairynex:create-admin')
             ->expectsQuestion('Name', 'Platform Operator')->expectsQuestion('Mobile', '9876543210')
             ->expectsQuestion('Email (optional)', 'operator@example.test')
-            ->expectsQuestion('Password (at least 12 characters)', 'operator-password-123')
+            ->expectsQuestion('Password (at least 8 characters)', 'operator-password-123')
             ->expectsQuestion('Confirm password', 'operator-password-123')->assertExitCode(0);
 
         $user = User::where('mobile', '9876543210')->firstOrFail();

@@ -45,14 +45,14 @@ const submit = () =>
                             {{
                                 deliveryBoy
                                     ? 'New password (leave blank to keep current)'
-                                    : 'Password (at least 12 characters)'
+                                    : 'Password (at least 8 characters)'
                             }}
                         </label>
                         <input
                             id="boy-password"
                             v-model="form.password"
                             type="password"
-                            minlength="12"
+                            minlength="8"
                             :required="!deliveryBoy"
                             autocomplete="new-password"
                         />
@@ -71,6 +71,7 @@ const submit = () =>
                             type="password"
                             :required="!!form.password"
                             autocomplete="new-password"
+                            :aria-invalid="!!form.errors.password"
                         />
                     </div>
                     <div class="field">
@@ -173,7 +174,7 @@ const submit = () =>
                 type="submit"
                 :disabled="form.processing"
             >
-                {{ form.processing ? 'Saving…' : 'Save Delivery Boy' }}
+                {{ form.processing ? 'Saving…' : deliveryBoy ? 'Update Delivery Boy' : 'Save Delivery Boy' }}
             </button>
         </form>
     </AdminLayout>

@@ -34,7 +34,7 @@ Fresh installs seed no accounts. An authorized operator can create a platform Su
 php artisan dairynex:create-admin
 ```
 
-To create a Client Admin for an existing active dairy, use `php artisan dairynex:create-admin --client=DAIRY_ID`. The command prompts for name/mobile/email and privately prompts for a confirmed password of at least 12 characters. No credentials are accepted as command arguments or stored in output/audit metadata. Dairy/plan lifecycle management is available in the Super Admin console at `/platform`; see [Super Admin operations](SUPER_ADMIN.md).
+To create a Client Admin for an existing active dairy, use `php artisan dairynex:create-admin --client=DAIRY_ID`. The command prompts for name/mobile/email and privately prompts for a confirmed password of at least 8 characters. No credentials are accepted as command arguments or stored in output/audit metadata. Dairy/plan lifecycle management is available in the Super Admin console at `/platform`; see [Super Admin operations](SUPER_ADMIN.md).
 
 To explicitly provision an existing legacy account, retaining its ID and relationships:
 

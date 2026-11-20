@@ -15,7 +15,7 @@ const submit = () => form.post('/change-password', { onFinish: () => form.reset(
     <Head title="Change password" />
     <AuthLayout title="Choose a permanent password">
         <p>
-            Change your temporary password before accessing your dairy. Use at least 12 characters.
+            Change your temporary password before accessing your dairy. Use at least 8 characters.
         </p>
         <form @submit.prevent="submit">
             <div class="field">
@@ -36,7 +36,7 @@ const submit = () => form.post('/change-password', { onFinish: () => form.reset(
                     v-model="form.password"
                     type="password"
                     required
-                    minlength="12"
+                    minlength="8"
                     autocomplete="new-password"
                 />
                 <span class="error-text">{{ form.errors.password }}</span>
@@ -48,7 +48,7 @@ const submit = () => form.post('/change-password', { onFinish: () => form.reset(
                     v-model="form.password_confirmation"
                     type="password"
                     required
-                    minlength="12"
+                    minlength="8"
                     autocomplete="new-password"
                 />
             </div>

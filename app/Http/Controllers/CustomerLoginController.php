@@ -28,7 +28,7 @@ class CustomerLoginController extends Controller
                         ->where('user_type_id', Role::Customer->value)
                         ->where('status', 1)),
             ],
-            'password' => ['required_without:user_id', 'nullable', 'confirmed', Password::min(12)],
+            'password' => ['required_without:user_id', 'nullable', 'confirmed', Password::min(8)],
         ]);
 
         DB::transaction(function () use ($customer, $clientId, $data) {

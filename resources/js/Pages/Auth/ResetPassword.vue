@@ -41,12 +41,12 @@ const submit = () =>
                 </div>
             </div>
             <div class="field">
-                <label for="password">New password (at least 12 characters)</label>
+                <label for="password">New password (at least 8 characters)</label>
                 <input
                     id="password"
                     v-model="form.password"
                     type="password"
-                    minlength="12"
+                    minlength="8"
                     required
                     autocomplete="new-password"
                 />
@@ -63,7 +63,7 @@ const submit = () =>
                     id="confirmation"
                     v-model="form.password_confirmation"
                     type="password"
-                    minlength="12"
+                    minlength="8"
                     required
                     autocomplete="new-password"
                 />

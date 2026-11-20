@@ -27,10 +27,10 @@ class ProvisionUser extends Command
             return self::FAILURE;
         }
 
-        $password = $this->secret('New password (at least 12 characters)');
+        $password = $this->secret('New password (at least 8 characters)');
         $confirmation = $this->secret('Confirm password');
         $validator = Validator::make(['password' => $password, 'password_confirmation' => $confirmation], [
-            'password' => ['required', 'confirmed', Password::min(12)],
+            'password' => ['required', 'confirmed', Password::min(8)],
         ]);
 
         if ($validator->fails()) {

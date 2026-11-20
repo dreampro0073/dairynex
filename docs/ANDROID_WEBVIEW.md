@@ -2,6 +2,27 @@
 
 The web client uses `VisualViewport` only as a fallback for WebViews that pan content instead of resizing it. The preferred native configuration is resize mode. Do not add an inset listener that consumes IME insets or translates the WebView: that creates a second, competing keyboard offset.
 
+## Android system Back button
+
+The web app's navigation uses Inertia's browser history, and the admin layout also has an in-app back arrow. The Android Activity must send its system Back button to the WebView while the WebView has a previous page; otherwise Android finishes the Activity and closes the app. The Android Activity source is maintained by the mobile wrapper, not this Laravel repository. Add this callback where that Activity creates its `WebView`:
+
+```kotlin
+onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+    override fun handleOnBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            // Let Android close the Activity only when the WebView has no history.
+            isEnabled = false
+            onBackPressedDispatcher.onBackPressed()
+            isEnabled = true
+        }
+    }
+})
+```
+
+Import `androidx.activity.OnBackPressedCallback`. Keep the callback active for the lifetime of the Activity and use the same WebView instance that loads DairyNex. This sends system Back to the previous Inertia/browser entry; the app exits only at the first page.
+
 ## Host Activity
 
 In the manifest, use resize mode on the Activity hosting DairyNex:

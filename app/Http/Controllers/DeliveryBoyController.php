@@ -367,7 +367,7 @@ class DeliveryBoyController extends Controller
         ?int $deliveryBoyId = null
     ) {
         return $request->validate([
-            'password' => [$deliveryBoyId ? 'nullable' : 'required', 'confirmed', Password::min(12)],
+            'password' => [$deliveryBoyId ? 'nullable' : 'required', 'confirmed', Password::min(8)],
             'name' => [
                 'required',
                 'string',
@@ -550,7 +550,8 @@ class DeliveryBoyController extends Controller
             ->where('client_id', $clientId)
             ->where('status', 1)
             ->where(function ($query) use ($currentDeliveryBoyId) {
-                $query->where('delivery_boy_id', 0);
+                $query->where('delivery_boy_id', 0)
+                    ->orWhereNull('delivery_boy_id');
 
                 if ($currentDeliveryBoyId !== null) {
                     $query->orWhere('delivery_boy_id', $currentDeliveryBoyId);

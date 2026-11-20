@@ -46,7 +46,7 @@ class PasswordController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string'],
             'email' => ['required', 'email', 'max:150'],
-            'password' => ['required', 'confirmed', PasswordRule::min(12)],
+            'password' => ['required', 'confirmed', PasswordRule::min(8)],
         ]);
 
         $users = User::where('email', $data['email'])->limit(2)->get();

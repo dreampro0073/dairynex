@@ -309,6 +309,19 @@ button {
     color: var(--ink);
 }
 
+.back-btn {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--ink);
+}
+
 .topbar .title {
     font-weight: 700;
     font-size: 18px;
@@ -2218,6 +2231,33 @@ a.btn {
 
     .topbar {
         padding: 14px;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .topbar-right {
+        flex: 1 0 100%;
+        justify-content: flex-end;
+        gap: 7px;
+    }
+
+    .topbar > div:nth-child(3) {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .topbar .title {
+        overflow-wrap: anywhere;
+    }
+
+    .topbar-right > .btn,
+    .topbar-right > a.btn,
+    .topbar-right > button.btn {
+        max-width: 100%;
+    }
+
+    .topbar-right > .avatar {
+        display: none;
     }
 
     .form-grid {

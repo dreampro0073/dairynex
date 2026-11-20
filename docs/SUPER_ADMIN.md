@@ -40,7 +40,7 @@ The existing prototype sidebar, cards, plan cards, tables, forms and responsive 
 2. Select an active Client Admin and **Generate / Reset Temporary Password**. Resetting replaces their password and invalidates existing authenticated sessions on their next request.
 3. Copy the password from the one-time display. The response is JSON with `Cache-Control: no-store, private`; the password is held in component memory, never in Inertia props, browser history, flash data, audit metadata or database plaintext. Display clears after two minutes, when hidden, when the tab/page is hidden or when the modal closes.
 4. Give the tester the displayed login URL and email/mobile. Dairy ID disambiguates duplicate identities and does not grant tenant authorization.
-5. On sign-in, the tester must replace the password with a different confirmed password of at least 12 characters before any tenant module is accessible. Temporary credentials expire after 24 hours.
+5. On sign-in, the tester must replace the password with a different confirmed password of at least 8 characters before any tenant module is accessible. Temporary credentials expire after 24 hours.
 
 Only securely hashed passwords are stored through the existing User model's hashed cast. Existing passwords and hashes are never returned. Resets are role protected, account/dairy scoped, rate limited and audited with actor, target, dairy, IP and timestamp. Resetting also revokes existing email-reset tokens. New Client Admins receive an undisclosed random credential until a Super Admin explicitly generates a temporary one.
 
