@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use Throwable;
 
 class DeliveryRouteController extends Controller
 {
@@ -97,21 +98,24 @@ class DeliveryRouteController extends Controller
             $clientId
         );
 
-        DeliveryRoute::create([
-            'client_id' => $clientId,
+        try {
+            DeliveryRoute::create([
+                'client_id' => $clientId,
+                'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
+                'name' => $validated['name'],
+                'area_locality' => $validated['area_locality'] ?? null,
+                'expected_stops' => $validated['expected_stops'] ?? 0,
+                'route_date' => $validated['route_date'] ?? null,
+                'status' => $validated['status'],
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
 
-            'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
-
-            'name' => $validated['name'],
-
-            'area_locality' => $validated['area_locality'] ?? null,
-
-            'expected_stops' => $validated['expected_stops'] ?? 0,
-
-            'route_date' => $validated['route_date'] ?? null,
-
-            'status' => $validated['status'],
-        ]);
+            return back()->withInput()->with(
+                'error',
+                'Route could not be saved because of a server error. Please try again.'
+            );
+        }
 
         return redirect()
             ->route('routes.index')
@@ -163,19 +167,23 @@ class DeliveryRouteController extends Controller
             $deliveryRoute->id
         );
 
-        $deliveryRoute->update([
-            'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
+        try {
+            $deliveryRoute->update([
+                'delivery_boy_id' => (int) ($validated['delivery_boy_id'] ?? 0),
+                'name' => $validated['name'],
+                'area_locality' => $validated['area_locality'] ?? null,
+                'expected_stops' => $validated['expected_stops'] ?? 0,
+                'route_date' => $validated['route_date'] ?? null,
+                'status' => $validated['status'],
+            ]);
+        } catch (Throwable $exception) {
+            report($exception);
 
-            'name' => $validated['name'],
-
-            'area_locality' => $validated['area_locality'] ?? null,
-
-            'expected_stops' => $validated['expected_stops'] ?? 0,
-
-            'route_date' => $validated['route_date'] ?? null,
-
-            'status' => $validated['status'],
-        ]);
+            return back()->withInput()->with(
+                'error',
+                'Route could not be updated because of a server error. Please try again.'
+            );
+        }
 
         return redirect()
             ->route('routes.index')
