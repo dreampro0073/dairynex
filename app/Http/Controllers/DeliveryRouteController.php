@@ -8,7 +8,10 @@ use App\Models\User;
 use App\Support\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Throwable;
 
@@ -232,7 +235,7 @@ class DeliveryRouteController extends Controller
         int $clientId,
         ?int $routeId = null
     ): array {
-        return $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => [
                 'required',
                 'string',
@@ -293,6 +296,18 @@ class DeliveryRouteController extends Controller
                 Rule::in([0, 1]),
             ],
         ]);
+
+        if ($validator->fails()) {
+            Log::warning('Delivery route form validation failed.', [
+                'client_id' => $clientId,
+                'route_id' => $routeId,
+                'failed_fields' => array_keys($validator->errors()->messages()),
+            ]);
+
+            throw new ValidationException($validator);
+        }
+
+        return $validator->validated();
     }
 
     private function deliveryBoys(int $clientId)

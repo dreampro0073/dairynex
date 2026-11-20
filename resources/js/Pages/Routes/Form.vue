@@ -57,6 +57,23 @@ const submit = () => {
             ← Back to Delivery Routes
         </Link>
 
+        <div
+            v-if="Object.keys(form.errors).length"
+            class="alert alert-danger"
+            role="alert"
+            aria-live="assertive"
+        >
+            <strong>Route could not be saved. Please check:</strong>
+            <ul style="margin: 6px 0 0; padding-left: 20px">
+                <li
+                    v-for="(error, field) in form.errors"
+                    :key="field"
+                >
+                    {{ error }}
+                </li>
+            </ul>
+        </div>
+
         <form @submit.prevent="submit">
             <div class="panel">
                 <div class="panel-head">
