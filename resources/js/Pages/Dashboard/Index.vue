@@ -26,6 +26,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    counterSales: {
+        type: Array,
+        default: () => [],
+    },
     productSales: {
         type: Array,
         default: () => [],
@@ -41,6 +45,11 @@ const money = (value) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 2,
     })
+}
+
+const paymentMethodLabel = (value) => {
+    const method = String(value || 'credit').toLowerCase()
+    return method === 'upi' ? 'UPI' : method === 'cash' ? 'Cash' : 'Credit'
 }
 
 const shortMoney = (value) => {
@@ -274,6 +283,29 @@ const deliveryStatusText = (status) =>
                         </div>
 
                         <div class="t">No recent activity</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h3>Quick Sales Today</h3>
+                    <Link href="/walk-in-sales" class="link">All sales</Link>
+                </div>
+                <div class="ledger-list">
+                    <div v-for="sale in counterSales" :key="sale.id" class="ledger-item">
+                        <div>
+                            <div class="who">{{ sale.customer }}</div>
+                            <div class="when">
+                                {{ paymentMethodLabel(sale.payment_method) }} · {{ sale.receipt_no }}
+                                <template v-if="sale.due_amount > 0"> · Due ₹{{ money(sale.due_amount) }}</template>
+                                <template v-else> · Paid</template>
+                            </div>
+                        </div>
+                        <Link :href="`/walk-in-sales/${sale.id}`" class="link">₹{{ money(sale.total) }}</Link>
+                    </div>
+                    <div v-if="counterSales.length === 0" class="empty-state">
+                        <div class="t">No quick sales today</div>
                     </div>
                 </div>
             </div>

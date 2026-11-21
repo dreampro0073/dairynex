@@ -50,6 +50,40 @@ class PortalController extends Controller
             ->limit(6)
             ->get();
 
+        $counterSales = DB::table('walk_in_sales')
+            ->leftJoin('ref_payment_methods as methods', 'methods.id', '=', 'walk_in_sales.payment_method_id')
+            ->where('client_id', $client)
+            ->where('walk_in_sales.customer_id', $customer->id)
+            ->where('walk_in_sales.status', 1)
+            ->whereDate('walk_in_sales.sold_at', '>=', $month->toDateString())
+            ->whereDate('walk_in_sales.sold_at', '<=', $monthEnd->toDateString())
+            ->orderByDesc('walk_in_sales.sold_at')
+            ->limit(6)
+            ->get([
+                'walk_in_sales.id', 'walk_in_sales.sold_at', 'walk_in_sales.total',
+                'walk_in_sales.due_amount', 'walk_in_sales.receipt_no',
+                DB::raw("COALESCE(methods.name, 'Credit') as payment_method"),
+            ]);
+
+        $recentHistory = $recent->map(fn ($delivery) => [
+            'id' => 'delivery-'.$delivery->id,
+            'record_type' => 'delivery',
+            'date' => $delivery->delivery_date,
+            'status' => DeliveryStatus::tryFrom((int) $delivery->status_id)?->label() ?? 'Pending',
+            'amount' => $delivery->total_amount,
+        ])->concat($counterSales->map(fn ($sale) => [
+            'id' => 'counter-sale-'.$sale->id,
+            'record_type' => 'counter_sale',
+            'date' => $sale->sold_at,
+            'status' => 'Counter Sale · '.(strtolower($sale->payment_method) === 'upi'
+                ? 'UPI'
+                : ucfirst($sale->payment_method)),
+            'amount' => $sale->total,
+            'detail' => $sale->due_amount > 0
+                ? substr((string) $sale->sold_at, 0, 10).' · Due '.Decimal::format($sale->due_amount).' · '.$sale->receipt_no
+                : substr((string) $sale->sold_at, 0, 10).' · Paid · '.$sale->receipt_no,
+        ]))->sortByDesc('date')->take(6)->values();
+
         $monthlyQty = DB::table('delivery_items')
             ->where('client_id', $client)
             ->whereIn('delivery_id', (clone $deliveries)
@@ -113,12 +147,7 @@ class PortalController extends Controller
                     ->sum('total'), 2, '.', ''),
                 'outstanding' => Decimal::format(app(LedgerService::class)->balance($customer)),
             ],
-            'deliveries' => $recent->map(fn ($d) => [
-                'id' => $d->id,
-                'date' => $d->delivery_date,
-                'status' => DeliveryStatus::tryFrom((int) $d->status_id)?->label() ?? 'Pending',
-                'amount' => $d->total_amount,
-            ]),
+            'deliveries' => $recentHistory,
             'todayDelivery' => (clone $deliveries)
                 ->whereDate('delivery_date', today())
                 ->orderBy('delivery_slot_id')

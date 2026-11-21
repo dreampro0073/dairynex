@@ -28,6 +28,11 @@ const tabs = [
 
 const money = (v) => `₹${Number(v || 0).toFixed(2)}`
 
+const paymentMethodLabel = (value) => {
+    const method = String(value || 'credit').toLowerCase()
+    return method === 'upi' ? 'UPI' : method === 'cash' ? 'Cash' : 'Credit'
+}
+
 const preference = (v) =>
     ({ 1: 'Morning', 2: 'Evening', 3: 'Morning & evening' })[v] || 'As scheduled'
 
@@ -108,7 +113,7 @@ const deliverySummary = (delivery) => {
                     >
                         <span>
                             <b>{{ d.status }}</b>
-                            <small>{{ d.date }}</small>
+                            <small>{{ d.detail ? `${d.date} · ${d.detail}` : d.date }}</small>
                         </span>
                         <strong>{{ money(d.amount) }}</strong>
                     </div>
@@ -191,7 +196,7 @@ const deliverySummary = (delivery) => {
                         </span>
                         <span>
                             <b>{{ money(sale.total) }}</b>
-                            <small>{{ sale.payment_method }} · {{ sale.due_amount > 0 ? `Outstanding ${money(sale.due_amount)}` : 'Paid' }}</small>
+                            <small>{{ paymentMethodLabel(sale.payment_method) }} · {{ sale.due_amount > 0 ? `Outstanding ${money(sale.due_amount)}` : 'Paid' }}</small>
                         </span>
                     </div>
                     <p v-if="!purchases.length" class="portal-muted">No counter purchases yet.</p>

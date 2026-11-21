@@ -135,34 +135,38 @@ const errors = (form) => Object.values(form.errors).join(' ')
                     <tbody>
                         <tr
                             v-for="delivery in deliveries.data"
-                            :key="delivery.id"
+                            :key="`${delivery.record_type}-${delivery.id}`"
                         >
                             <td>{{ delivery.customer_name }}</td>
-                            <td>{{ String(delivery.delivery_date).slice(0, 10) }}</td>
+                            <td>{{ String(delivery.history_date ?? delivery.delivery_date).slice(0, 10) }}</td>
                             <td>
                                 <span
                                     class="badge"
-                                    :class="delivery.status_id === 3 ? 'ok' : 'pending'"
+                                    :class="delivery.record_type === 'counter_sale' || delivery.status_id === 3 ? 'ok' : 'pending'"
                                 >
                                     {{ delivery.status }}
                                 </span>
                             </td>
                             <td>
-                                {{
+                                <template v-if="delivery.record_type === 'counter_sale'">—</template>
+                                <template v-else>{{
                                     delivery.pin_required === null
                                         ? 'Legacy: unknown'
                                         : delivery.pin_required
                                           ? 'Required'
                                           : 'Disabled'
-                                }}
+                                }}</template>
                             </td>
                             <td class="num">₹{{ delivery.total_amount }}</td>
                             <td>
                                 <Link
-                                    :href="`/deliveries/${delivery.id}`"
+                                    :href="delivery.record_type === 'counter_sale' ? `/walk-in-sales/${delivery.id}` : `/deliveries/${delivery.id}`"
                                     class="link"
                                 >
                                     {{
+                                        delivery.record_type === 'counter_sale'
+                                            ? 'Receipt'
+                                            :
                                         page.props.auth?.user?.role === 'client_admin' &&
                                         [1, 2].includes(Number(delivery.status_id))
                                             ? 'Process delivery'

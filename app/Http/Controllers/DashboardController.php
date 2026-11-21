@@ -84,6 +84,23 @@ class DashboardController extends Controller
             ->whereIn('id', $activity->pluck('customer_id'))
             ->pluck('name', 'id');
 
+        $counterSales = DB::table('walk_in_sales as sales')
+            ->leftJoin('customers', function ($join) {
+                $join->on('customers.id', '=', 'sales.customer_id')
+                    ->on('customers.client_id', '=', 'sales.client_id');
+            })
+            ->leftJoin('ref_payment_methods as methods', 'methods.id', '=', 'sales.payment_method_id')
+            ->where('sales.client_id', $client)
+            ->where('sales.status', 1)
+            ->whereDate('sales.sold_at', today())
+            ->orderByDesc('sales.sold_at')
+            ->limit(8)
+            ->get([
+                'sales.id', 'sales.receipt_no', 'sales.sold_at', 'sales.total', 'sales.due_amount',
+                DB::raw("COALESCE(customers.name, sales.customer_name, 'Guest') as customer"),
+                DB::raw("COALESCE(methods.name, 'Credit') as payment_method"),
+            ]);
+
         return Inertia::render('Dashboard/Index', [
             'stats' => [
                 'today_delivered' => $delivered,
@@ -125,6 +142,7 @@ class DashboardController extends Controller
                 'type' => (float) $row->credit > 0 ? 'payment' : 'delivery',
                 'amount' => max((float) $row->debit, (float) $row->credit),
             ]),
+            'counterSales' => $counterSales,
             'productSales' => $sales->map(fn ($row) => [
                 'name' => $row->name,
                 'amount' => $row->amount,
