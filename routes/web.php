@@ -128,7 +128,7 @@ Route::middleware(['auth', 'auth.session', 'account'])->group(function () {
         ->name('deliveries.show');
 
     Route::post('/deliveries/{id}/complete', [DeliveryController::class, 'complete'])
-        ->middleware(['account:delivery_boy', 'throttle:10,1'])
+        ->middleware(['throttle:10,1'])
         ->whereNumber('id')
         ->name('deliveries.complete');
 

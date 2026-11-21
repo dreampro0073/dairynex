@@ -41,9 +41,17 @@ class DeliveryService
     public function complete(User $actor, int $id, array $quantities, ?string $pin, bool $skip = false): Delivery
     {
         $result = DB::transaction(function () use ($actor, $id, $quantities, $pin, $skip) {
-            abort_unless($actor->canSignIn() && $actor->role() === Role::DeliveryBoy, 403);
+            $role = $actor->role();
+            abort_unless(
+                $actor->canSignIn() && in_array($role, [Role::DeliveryBoy, Role::ClientAdmin], true),
+                403
+            );
+
             $delivery = Delivery::where('client_id', $actor->client_id)->lockForUpdate()->findOrFail($id);
-            abort_unless((int) $delivery->delivery_boy_id === $actor->id, 403);
+
+            if ($role === Role::DeliveryBoy) {
+                abort_unless((int) $delivery->delivery_boy_id === $actor->id, 403);
+            }
 
             if (! in_array($delivery->status_id, [DeliveryStatus::Pending->value, DeliveryStatus::PinVerified->value])) {
                 throw ValidationException::withMessages(['delivery' => 'This delivery has already been finalized or cannot be completed.']);

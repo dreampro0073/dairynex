@@ -7,6 +7,7 @@ import axios from 'axios'
 const props = defineProps({ delivery: Object })
 
 const page = usePage()
+const canCompleteDelivery = ['client_admin', 'delivery_boy'].includes(page.props.auth?.user?.role)
 
 const form = useForm({
     items: props.delivery.items.map((item) => ({ id: item.id, quantity: item.planned_quantity })),
@@ -106,7 +107,7 @@ const complete = (skip) => {
                                     <input
                                         v-if="
                                             delivery.pending &&
-                                            page.props.auth?.user?.role === 'delivery_boy'
+                                            canCompleteDelivery
                                         "
                                         v-model="form.items[index].quantity"
                                         type="number"
@@ -125,7 +126,7 @@ const complete = (skip) => {
                     </table>
                 </div>
                 <div
-                    v-if="delivery.pending && page.props.auth?.user?.role === 'delivery_boy'"
+                    v-if="delivery.pending && canCompleteDelivery"
                     class="form-grid"
                 >
                     <div

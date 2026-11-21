@@ -149,7 +149,7 @@ const deliveryStatusText = (status) =>
                         href="/deliveries"
                         class="link"
                     >
-                        View all
+                        Search / process deliveries
                     </Link>
                 </div>
 
@@ -163,6 +163,7 @@ const deliveryStatusText = (status) =>
                                 <th>Status</th>
 
                                 <th class="num">Amount</th>
+                                <th></th>
                             </tr>
                         </thead>
 
@@ -195,10 +196,18 @@ const deliveryStatusText = (status) =>
                                 </td>
 
                                 <td class="num">₹{{ money(delivery.amount) }}</td>
+                                <td>
+                                    <Link
+                                        :href="`/deliveries/${delivery.id}`"
+                                        class="link"
+                                    >
+                                        {{ [1, 2].includes(Number(delivery.status)) ? 'Process' : 'View' }}
+                                    </Link>
+                                </td>
                             </tr>
 
                             <tr v-if="deliveries.length === 0">
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="empty-state">
                                         <div class="ic">
                                             <i class="bi bi-truck"></i>

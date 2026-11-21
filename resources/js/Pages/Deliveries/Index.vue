@@ -63,6 +63,18 @@ const errors = (form) => Object.values(form.errors).join(' ')
             </p>
         </form>
         <div class="panel">
+            <div
+                v-if="page.props.auth?.user?.role === 'client_admin'"
+                class="panel-head"
+            >
+                <h3>Find and process a customer delivery</h3>
+                <Link
+                    href="/quick-sale"
+                    class="btn secondary sm"
+                >
+                    Counter sale
+                </Link>
+            </div>
             <form
                 class="form-grid"
                 @submit.prevent="filter.get(page.url.split('?')[0], { preserveState: true })"
@@ -150,7 +162,12 @@ const errors = (form) => Object.values(form.errors).join(' ')
                                     :href="`/deliveries/${delivery.id}`"
                                     class="link"
                                 >
-                                    View
+                                    {{
+                                        page.props.auth?.user?.role === 'client_admin' &&
+                                        [1, 2].includes(Number(delivery.status_id))
+                                            ? 'Process delivery'
+                                            : 'View'
+                                    }}
                                 </Link>
                             </td>
                         </tr>
