@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `check_password` TEXT NULL DEFAULT NULL AFTER `password`;
