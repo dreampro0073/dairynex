@@ -7,11 +7,11 @@ const props = defineProps({
     products: Array,
     customers: Array,
     methods: Array,
-    key: String,
+    idempotencyKey: String,
 })
 
 const form = useForm({
-    key: props.key,
+    key: props.idempotencyKey,
     customer_id: '',
     customer_name: '',
     customer_mobile: '',

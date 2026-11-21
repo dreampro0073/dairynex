@@ -45,7 +45,7 @@ class WalkInSaleController extends Controller
                 ->whereIn('id', [1, 2])
                 ->orderBy('id')
                 ->get(['id', 'name']),
-            'key' => (string) Str::uuid(),
+            'idempotencyKey' => (string) Str::uuid(),
         ]);
     }
 
