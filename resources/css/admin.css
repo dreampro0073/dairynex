@@ -536,7 +536,10 @@ button {
     gap: 10px;
     flex-wrap: wrap;
 }
-
+.plr-0{
+    padding-left: 0;
+    padding-right: 0;
+}
 .panel-head h3 {
     font-size: 14.5px;
     font-weight: 700;
@@ -2324,9 +2327,20 @@ a.btn {
     align-items: start;
 }
 .walkin-select {
+    border-radius: 11px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    margin-top: 16px;
     width: 100%;
-    margin: 8px 0 16px;
-    min-height: 44px;
+}
+.panel-body{
+    padding: 16px;
+}
+.panel-body .form-grid{
+    padding: 16px 0;
 }
 .walkin-grid .panel { min-width: 0; }
 .walkin-grid .panel-head input { max-width: 240px; min-width: 0; }
