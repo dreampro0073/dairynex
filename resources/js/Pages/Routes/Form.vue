@@ -31,7 +31,10 @@ const submit = () => {
         return
     }
 
-    form.post('/routes')
+    // The production host canonicalizes /routes to /routes/ with a 301.
+    // Post to the canonical URL directly so the browser does not turn the
+    // form submission into a GET while following that redirect.
+    form.post('/routes/')
 }
 </script>
 

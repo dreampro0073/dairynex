@@ -13,6 +13,11 @@
     RewriteCond %{HTTP:x-xsrf-token} .
     RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
 
+    # Keep the canonical route collection URL on the Laravel front controller.
+    # Some production hosts canonicalize /routes to /routes/; let it reach
+    # Laravel directly instead of receiving a method-changing 301.
+    RewriteRule ^routes/?$ index.php [L]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$
