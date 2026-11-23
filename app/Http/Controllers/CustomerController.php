@@ -12,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Support\Decimal;
 use App\Support\Tenant;
+use App\Services\DeliveryGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -153,7 +154,7 @@ class CustomerController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, DeliveryGenerationService $deliveryGeneration)
     {
         $clientId = Tenant::id();
 
@@ -216,25 +217,23 @@ class CustomerController extends Controller
                 $clientId
             );
 
-            if (
-                ($validated['action'] ?? null)
-                === 'save_subscription'
-            ) {
-                $this->createSubscription(
-                    $customer,
-                    $validated,
-                    $clientId
-                );
-            }
+            $this->createOrUpdateSubscription($customer, $validated, $clientId);
 
             return $customer;
         });
+
+        $generated = $deliveryGeneration->generate(
+            $request->user(),
+            today()->toDateString(),
+            $customer->id,
+            true
+        );
 
         return redirect()
             ->route('customers.index')
             ->with(
                 'success',
-                'Customer added successfully.'
+                "Customer added successfully. {$generated} pending deliveries created."
             );
     }
 
@@ -350,7 +349,8 @@ class CustomerController extends Controller
 
     public function update(
         Request $request,
-        Customer $customer
+        Customer $customer,
+        DeliveryGenerationService $deliveryGeneration
     ) {
         $clientId = Tenant::id();
 
@@ -430,23 +430,21 @@ class CustomerController extends Controller
                 $clientId
             );
 
-            if (
-                ($validated['action'] ?? null)
-                === 'save_subscription'
-            ) {
-                $this->createOrUpdateSubscription(
-                    $customer,
-                    $validated,
-                    $clientId
-                );
-            }
+            $this->createOrUpdateSubscription($customer, $validated, $clientId);
         });
+
+        $generated = $deliveryGeneration->generate(
+            $request->user(),
+            today()->toDateString(),
+            $customer->id,
+            true
+        );
 
         return redirect()
             ->route('customers.index')
             ->with(
                 'success',
-                'Customer updated successfully.'
+                "Customer and subscription updated. {$generated} pending deliveries created or synced."
             );
     }
 
@@ -747,49 +745,6 @@ class CustomerController extends Controller
 
                 'created_at' => now(),
             ]);
-    }
-
-    private function createSubscription(
-        Customer $customer,
-        array $validated,
-        int $clientId
-    ): void {
-        $items = collect(
-            $validated['subscription_items']
-            ?? []
-        )->filter(
-            fn ($item) => ! empty($item['product_id'])
-        );
-
-        if ($items->isEmpty()) {
-            return;
-        }
-
-        $subscription = Subscription::create([
-            'client_id' => $clientId,
-            'customer_id' => $customer->id,
-
-            'subscription_no' => $this->generateSubscriptionNo(
-                $clientId
-            ),
-
-            'billing_cycle_id' => 1,
-            'start_date' => now()->toDateString(),
-            'status' => 1,
-            'auto_generate_deliveries' => 1,
-        ]);
-
-        foreach ($items as $item) {
-            $subscription->items()->create([
-                'client_id' => $clientId,
-
-                'product_id' => $item['product_id'],
-
-                'default_quantity' => $item['quantity'] ?? 1,
-
-                'rate' => $item['rate'] ?? 0,
-            ]);
-        }
     }
 
     private function createOrUpdateSubscription(

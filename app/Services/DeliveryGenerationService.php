@@ -17,17 +17,18 @@ use Illuminate\Validation\ValidationException;
 
 class DeliveryGenerationService
 {
-    public function generate(User $actor, string $date): int
+    public function generate(User $actor, string $date, ?int $customerId = null, bool $syncPending = false): int
     {
         abort_unless($actor->canSignIn() && $actor->role() === Role::ClientAdmin, 403);
         $day = CarbonImmutable::parse($date)->startOfDay();
 
-        return DB::transaction(function () use ($actor, $day) {
+        return DB::transaction(function () use ($actor, $day, $customerId, $syncPending) {
             // Serialize tenant delivery generation, including retries, on MySQL.
             Client::lockForUpdate()->findOrFail($actor->client_id);
             $created = 0;
             $subscriptions = Subscription::where('client_id', $actor->client_id)->where('status', 1)
                 ->where('auto_generate_deliveries', 1)->whereDate('start_date', '<=', $day)
+                ->when($customerId, fn ($query) => $query->where('customer_id', $customerId))
                 ->where(fn ($q) => $q->whereNull('end_date')
                     ->orWhereDate('end_date', '>=', $day))
                 ->orderBy('id')
@@ -38,16 +39,23 @@ class DeliveryGenerationService
                     ->where('status', 1)
                     ->find($subscription->customer_id);
 
-                if (
-                    ! $customer
-                    || DB::table('subscription_pauses')
-                        ->where('client_id', $actor->client_id)
-                        ->where('subscription_id', $subscription->id)
-                        ->where('status', 1)
-                        ->whereDate('pause_from', '<=', $day)
-                        ->whereDate('pause_to', '>=', $day)
-                        ->exists()
-                ) {
+                $paused = DB::table('subscription_pauses')
+                    ->where('client_id', $actor->client_id)
+                    ->where('subscription_id', $subscription->id)
+                    ->where('status', 1)
+                    ->whereDate('pause_from', '<=', $day)
+                    ->whereDate('pause_to', '>=', $day)
+                    ->exists();
+
+                if (! $customer || $paused) {
+                    if ($syncPending) {
+                        Delivery::where('client_id', $actor->client_id)
+                            ->where('subscription_id', $subscription->id)
+                            ->whereDate('delivery_date', $day)
+                            ->where('status_id', 1)
+                            ->update(['status_id' => 5]);
+                    }
+
                     continue;
                 }
 
@@ -132,15 +140,13 @@ class DeliveryGenerationService
                 foreach ($slots as $slot => $items) {
                     $key = implode(':', [$actor->client_id, $subscription->id, $day->toDateString(), $slot]);
 
-                    if (
-                        Delivery::where('generation_key', $key)
-                            ->exists()
-                        || Delivery::where('client_id', $actor->client_id)
-                            ->where('subscription_id', $subscription->id)
-                            ->whereDate('delivery_date', $day)
-                            ->where('delivery_slot_id', $slot)
-                            ->exists()
-                    ) {
+                    $existing = Delivery::where('client_id', $actor->client_id)
+                        ->where('subscription_id', $subscription->id)
+                        ->whereDate('delivery_date', $day)
+                        ->where('delivery_slot_id', $slot)
+                        ->first();
+
+                    if ($existing && (! $syncPending || $existing->status_id !== 1)) {
                         continue;
                     }
 
@@ -168,23 +174,34 @@ class DeliveryGenerationService
                         throw ValidationException::withMessages(['route' => 'The route must have an active Delivery Boy.']);
                     }
 
-                    $delivery = Delivery::create([
-                        'client_id' => $actor->client_id,
-                        'customer_id' => $customer->id,
-                        'subscription_id' => $subscription->id,
-                        'delivery_date' => $day->toDateString(),
-                        'delivery_slot_id' => $slot,
-                        'route_id' => $route->id,
-                        'delivery_boy_id' => $driver->id,
-                        'source_type' => 1,
-                        'status_id' => 1,
-                    ]);
+                    if ($existing) {
+                        $existing->update([
+                            'route_id' => $route->id,
+                            'delivery_boy_id' => $driver->id,
+                        ]);
+                        DB::table('delivery_items')->where('client_id', $actor->client_id)
+                            ->where('delivery_id', $existing->id)->delete();
+                        $delivery = $existing;
+                        $created++;
+                    } else {
+                        $delivery = Delivery::create([
+                            'client_id' => $actor->client_id,
+                            'customer_id' => $customer->id,
+                            'subscription_id' => $subscription->id,
+                            'delivery_date' => $day->toDateString(),
+                            'delivery_slot_id' => $slot,
+                            'route_id' => $route->id,
+                            'delivery_boy_id' => $driver->id,
+                            'source_type' => 1,
+                            'status_id' => 1,
+                        ]);
 
-                    $delivery->forceFill([
-                        'generation_key' => $key,
-                        'delivery_pin_hash' => $delivery->pin_required ? Hash::make((string) random_int(100000, 999999)) : null,
-                    ])
-                        ->save();
+                        $delivery->forceFill([
+                            'generation_key' => $key,
+                            'delivery_pin_hash' => $delivery->pin_required ? Hash::make((string) random_int(100000, 999999)) : null,
+                        ])->save();
+                        $created++;
+                    }
 
                     foreach ($items as $item) {
                         DB::table('delivery_items')
@@ -198,8 +215,21 @@ class DeliveryGenerationService
                                 'updated_at' => now(),
                             ]);
                     }
+                }
 
-                    $created++;
+                if ($syncPending) {
+                    $expectedSlots = array_map('intval', array_keys($slots));
+                    $stale = Delivery::where('client_id', $actor->client_id)
+                        ->where('subscription_id', $subscription->id)
+                        ->whereDate('delivery_date', $day)
+                        ->where('status_id', 1)
+                        ->when($expectedSlots, fn ($query) => $query->whereNotIn('delivery_slot_id', $expectedSlots))
+                        ->when(! $expectedSlots, fn ($query) => $query)
+                        ->get();
+
+                    foreach ($stale as $delivery) {
+                        $delivery->update(['status_id' => 5]);
+                    }
                 }
             }
 
