@@ -142,6 +142,7 @@ const deleteCustomer = (customer) => {
                             <th>Name</th>
                             <th>Route</th>
                             <th>Type</th>
+                            <th>Rate</th>
                             <th>Today's Qty</th>
                             <th>Status</th>
 
@@ -175,6 +176,10 @@ const deleteCustomer = (customer) => {
 
                             <td>
                                 {{ customerType(customer.customer_type) }}
+                            </td>
+
+                            <td>
+                                {{ customer.rate_type === 'varying' ? 'Varying' : 'Fixed' }}
                             </td>
 
                             <td>

@@ -78,6 +78,7 @@ class CustomerController extends Controller
                     'route' => $route?->name ?? '-',
 
                     'customer_type' => $customer->customer_type,
+                    'rate_type' => $customer->rate_type ?? 'fixed',
                     'status' => $customer->status,
 
                     'today_qty' => $todayQty,
@@ -189,6 +190,7 @@ class CustomerController extends Controller
                 'credit_limit' => $validated['credit_limit'] ?? 0,
 
                 'customer_type' => $validated['customer_type'],
+                'rate_type' => $validated['rate_type'],
 
                 'status' => $validated['status'] ?? 1,
 
@@ -273,6 +275,7 @@ class CustomerController extends Controller
                 'gender' => $customer->gender,
 
                 'customer_type' => $customer->customer_type,
+                'rate_type' => $customer->rate_type ?? 'fixed',
 
                 'opening_balance' => $customer->opening_balance,
 
@@ -404,6 +407,7 @@ class CustomerController extends Controller
                 'credit_limit' => $validated['credit_limit'] ?? 0,
 
                 'customer_type' => $validated['customer_type'],
+                'rate_type' => $validated['rate_type'],
 
                 'supply_preference' => $validated['supply_preference'],
             ]);
@@ -539,6 +543,8 @@ class CustomerController extends Controller
                 'integer',
                 Rule::in([1, 2, 3]),
             ],
+
+            'rate_type' => ['required', 'string', Rule::in(['fixed', 'varying'])],
 
             'credit_limit' => [
                 'nullable',

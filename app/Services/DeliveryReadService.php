@@ -26,7 +26,7 @@ class DeliveryReadService
     public function find(User $user, int $id): array
     {
         $delivery = $this->scopedQuery($user)->where('deliveries.id', $id)
-            ->select('deliveries.*', 'customers.name as customer_name')->firstOrFail();
+            ->select('deliveries.*', 'customers.name as customer_name', 'customers.rate_type as customer_rate_type')->firstOrFail();
 
         $items = DB::table('delivery_items as items')->join('products', function ($join) {
             $join->on('products.id', '=', 'items.product_id')
@@ -46,6 +46,7 @@ class DeliveryReadService
                 'id',
                 'delivery_date',
                 'customer_name',
+                'customer_rate_type',
                 'total_amount',
                 'pin_required',
                 'delivery_pin_verified_at',
@@ -53,6 +54,7 @@ class DeliveryReadService
             ]),
             'status' => DeliveryStatus::tryFrom($delivery->status_id)?->label() ?? 'Unknown',
             'pending' => in_array($delivery->status_id, [1, 2]),
+            'rate_type' => $delivery->customer_rate_type ?? 'fixed',
             'items' => $items,
         ];
     }

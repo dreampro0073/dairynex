@@ -94,11 +94,26 @@ class DeliveryService
                 $qty = $skip ? 0 : Decimal::scaled($input[$item->id]['quantity'], 3, 'items');
                 $hasQuantity = $hasQuantity || $qty > 0;
                 $rate = Decimal::scaled($item->rate, 2);
-                $amount = Decimal::charge($qty, $rate);
+                if (! $skip && ($customer->rate_type ?? 'fixed') === 'varying') {
+                    if ($qty === 0) {
+                        $amount = 0;
+                    } elseif (! array_key_exists('rate', $input[$item->id]) || $input[$item->id]['rate'] === null || $input[$item->id]['rate'] === '') {
+                        throw ValidationException::withMessages(['items' => 'Enter the rate for every product delivered to this varying-rate customer.']);
+                    } else {
+                        $rate = Decimal::scaled($input[$item->id]['rate'], 2, 'items');
+                        if ($rate < 0 || $rate > 999999999) {
+                            throw ValidationException::withMessages(['items' => 'Enter a valid non-negative rate.']);
+                        }
+                        $amount = Decimal::charge($qty, $rate);
+                    }
+                } else {
+                    $amount = Decimal::charge($qty, $rate);
+                }
                 $total += $amount;
                 $planned = Decimal::scaled($item->planned_quantity, 3);
                 $changes[$item->id] = [
                     'actual_quantity' => Decimal::format($qty, 3),
+                    'rate' => Decimal::format($rate),
                     'amount' => Decimal::format($amount),
                     'quantity_change_type' => $qty === 0 ? 4 : ($qty > $planned ? 2 : ($qty < $planned ? 3 : 1)),
                     'updated_at' => now(),

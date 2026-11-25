@@ -40,6 +40,7 @@ const form = useForm({
     date_of_birth: props.customer?.date_of_birth ?? '',
     gender: Number(props.customer?.gender ?? 1),
     customer_type: Number(props.customer?.customer_type ?? 1),
+    rate_type: props.customer?.rate_type ?? 'fixed',
     credit_limit: props.customer?.credit_limit ?? '',
     opening_balance: props.customer?.opening_balance ?? '',
     address_line1: props.customer?.address_line1 ?? '',
@@ -228,6 +229,16 @@ const submit = (withSubscription = false) => {
 
                             <option :value="3">Both</option>
                         </select>
+                    </div>
+
+                    <div class="field">
+                        <label>Milk Rate Type</label>
+                        <select v-model="form.rate_type">
+                            <option value="fixed">Fixed rate</option>
+                            <option value="varying">Varying rate (enter amount per delivery)</option>
+                        </select>
+                        <small>Varying rate customers need a manual amount for each delivered product.</small>
+                        <div v-if="form.errors.rate_type" class="error-text">{{ form.errors.rate_type }}</div>
                     </div>
 
                     <div class="field">

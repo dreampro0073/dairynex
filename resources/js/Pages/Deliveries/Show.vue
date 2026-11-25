@@ -10,7 +10,7 @@ const page = usePage()
 const canCompleteDelivery = ['client_admin', 'delivery_boy'].includes(page.props.auth?.user?.role)
 
 const form = useForm({
-    items: props.delivery.items.map((item) => ({ id: item.id, quantity: item.planned_quantity })),
+    items: props.delivery.items.map((item) => ({ id: item.id, quantity: item.planned_quantity, rate: '' })),
     pin: '',
     skip: false,
 })
@@ -85,6 +85,9 @@ const complete = (skip) => {
                 </div>
             </div>
             <form @submit.prevent="complete(false)">
+                <p v-if="delivery.pending && canCompleteDelivery && delivery.rate_type === 'varying'">
+                    This customer has a varying rate. Enter the daily rate for each product; amount is calculated as quantity × rate. Zero-quantity items are charged ₹0.
+                </p>
                 <div class="table-scroll">
                     <table>
                         <thead>
@@ -119,8 +122,24 @@ const complete = (skip) => {
                                     />
                                     <span v-else>{{ item.actual_quantity }}</span>
                                 </td>
-                                <td>₹{{ item.rate }}</td>
-                                <td>₹{{ item.amount }}</td>
+                                <td>
+                                    <input
+                                        v-if="delivery.pending && canCompleteDelivery && delivery.rate_type === 'varying'"
+                                        v-model="form.items[index].rate"
+                                        type="number"
+                                        min="0"
+                                        max="9999999.99"
+                                        step="0.01"
+                                        :required="Number(form.items[index].quantity) > 0"
+                                        :aria-label="`Rate for ${item.name}`"
+                                    />
+                                    <span v-else>₹{{ item.rate }}</span>
+                                </td>
+                                <td>
+                                    ₹{{ delivery.pending && delivery.rate_type === 'varying'
+                                        ? ((Number(form.items[index].quantity) || 0) * (Number(form.items[index].rate) || 0)).toFixed(2)
+                                        : item.amount }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>

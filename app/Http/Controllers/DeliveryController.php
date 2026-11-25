@@ -133,6 +133,7 @@ class DeliveryController extends Controller
             'items' => ['required_unless:skip,true', 'array', 'max:100'],
             'items.*.id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['required', 'numeric', 'min:0', 'max:999999.999', 'decimal:0,3'],
+            'items.*.rate' => ['nullable', 'numeric', 'min:0', 'max:9999999.99', 'decimal:0,2'],
         ]);
 
         $service->complete($request->user(), $id, $data['items'] ?? [], $data['pin'] ?? null, (bool) ($data['skip'] ?? false));

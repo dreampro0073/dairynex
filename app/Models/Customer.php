@@ -18,6 +18,7 @@ class Customer extends Model
         'credit_limit',
         'payment_mode_id',
         'customer_type',
+        'rate_type',
         'status',
         'supply_preference',
         'notes',
