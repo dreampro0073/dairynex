@@ -2290,19 +2290,25 @@ a.btn {
 
     .topbar {
         padding: 14px;
-        gap: 8px;
-        flex-wrap: wrap;
+        gap: 9px;
+        flex-wrap: nowrap;
     }
 
     .topbar-right {
-        flex: 1 0 100%;
+        flex: 0 1 auto;
+        width: auto;
         justify-content: flex-end;
         gap: 7px;
+        flex-wrap: nowrap;
     }
 
-    .topbar > div:nth-child(3) {
+    .topbar > div:not(.topbar-right) {
         flex: 1;
         min-width: 0;
+    }
+
+    .back-btn.main-tab-back-hidden {
+        display: none;
     }
 
     .topbar .title {
@@ -2317,6 +2323,13 @@ a.btn {
 
     .topbar-right > .avatar {
         display: none;
+    }
+
+    .topbar-right > .btn,
+    .topbar-right > a.btn,
+    .topbar-right > button.btn {
+        padding: 6px 8px;
+        font-size: 10px;
     }
 
     .form-grid {

@@ -9,6 +9,11 @@ const sidebarOpen = ref(false)
 
 const currentUrl = computed(() => page.url)
 
+const isMainMobileTab = computed(() => {
+    const path = currentUrl.value.split('?')[0].replace(/\/$/, '')
+    return ['/dashboard', '/customers', '/deliveries', '/quick-sale'].includes(path)
+})
+
 watch(currentUrl, () => {
     sidebarOpen.value = false
 })
@@ -267,19 +272,11 @@ const goBack = () => {
                     <button
                         type="button"
                         class="back-btn"
+                        :class="{ 'main-tab-back-hidden': isMainMobileTab }"
                         aria-label="Go back"
                         @click="goBack"
                     >
                         <i class="bi bi-arrow-left"></i>
-                    </button>
-                    <button
-                        type="button"
-                        class="menu-btn"
-                        @click="sidebarOpen = true"
-                        aria-label="Open navigation"
-                        :aria-expanded="sidebarOpen"
-                    >
-                        <i class="bi bi-list"></i>
                     </button>
 
                     <div>
