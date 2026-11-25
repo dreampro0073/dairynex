@@ -369,6 +369,10 @@ button {
 }
 
 .btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 12.5px;
     font-weight: 600;
     padding: 9px 16px;
@@ -377,6 +381,10 @@ button {
     background: var(--primary);
     color: #fff;
     white-space: nowrap;
+    text-decoration: none;
+    line-height: 1.35;
+    min-height: 38px;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn:hover {
@@ -1323,8 +1331,8 @@ tbody tr:hover td {
 }
 
 .stop-card .actions .btn.ghost {
-    background: transparent;
-    color: var(--ink-soft);
+    background: var(--surface);
+    color: var(--ink);
     border-color: var(--line-strong);
 }
 
@@ -2375,11 +2383,22 @@ a.btn {
 }
 .walkin-line {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 88px auto auto;
+    grid-template-columns: minmax(0, 1fr) 64px minmax(50px, auto) auto;
     gap: 10px;
     align-items: center;
     padding: 12px 0;
     border-bottom: 1px solid #edf0f2;
+}
+.walkin-line > div,
+.walkin-line .field {
+    min-width: 0;
+}
+.walkin-line .field {
+    margin: 0;
+}
+.walkin-line > b {
+    text-align: right;
+    white-space: nowrap;
 }
 .walkin-line input {
     width: 100%;
@@ -2399,6 +2418,42 @@ a.btn {
     max-width: 760px;
     margin: 0 auto;
 }
+.receipt-thanks {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid #bfe4ce;
+    border-radius: 14px;
+    background: var(--success-soft);
+    color: #185b37;
+}
+.receipt-thanks .receipt-check {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    font-size: 20px;
+}
+.receipt-thanks h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+}
+.receipt-thanks p {
+    margin: 0;
+    color: #356c4d;
+}
+.receipt-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
 @media (max-width: 900px) {
     .walkin-grid {
         grid-template-columns: 1fr;
@@ -2410,14 +2465,20 @@ a.btn {
     .walkin-grid .panel-head input { width: 100%; max-width: none; }
     .walkin-line {
         grid-template-columns: minmax(0, 1fr) 76px;
+        grid-template-areas:
+            "details quantity"
+            "amount remove";
         gap: 8px;
     }
+    .walkin-line > div { grid-area: details; }
+    .walkin-line > .field { grid-area: quantity; }
     .walkin-line .btn {
-        grid-column: 2;
+        grid-area: remove;
+        justify-self: end;
     }
     .walkin-line > b {
-        grid-column: 1;
-        grid-row: 2;
+        grid-area: amount;
+        justify-self: start;
     }
     .walkin-products {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2425,8 +2486,12 @@ a.btn {
     .walkin-product {
         padding: 11px;
     }
-    .walkin-line > div { min-width: 0; }
     .walkin-line strong { overflow-wrap: anywhere; }
+    .receipt { padding: 14px; }
+    .receipt .panel-head { align-items: flex-start; }
+    .receipt-thanks { padding: 14px; }
+    .receipt-thanks h2 { font-size: 16px; }
+    .receipt-actions > .btn { flex: 1 1 140px; }
 }
 @media print {
     .sidebar,

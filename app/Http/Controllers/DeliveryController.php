@@ -3,23 +3,41 @@
 namespace App\Http\Controllers;
 
 use App\Enums\DeliveryStatus;
+use App\Enums\Role;
 use App\Services\DeliveryGenerationService;
 use App\Services\DeliveryReadService;
 use App\Services\DeliveryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class DeliveryController extends Controller
 {
-    public function index(Request $request, DeliveryReadService $deliveries)
+    public function index(
+        Request $request,
+        DeliveryReadService $deliveries,
+        DeliveryGenerationService $generation
+    )
     {
         $filters = $request->validate([
             'date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'integer', Rule::in(array_column(DeliveryStatus::cases(), 'value'))],
             'q' => ['nullable', 'string', 'max:150'],
         ]);
+
+        $today = today()->toDateString();
+        $filters['date'] ??= $today;
+        $generationError = null;
+
+        if ($request->user()->role() === Role::ClientAdmin && $filters['date'] === $today) {
+            try {
+                $generation->generate($request->user(), $today);
+            } catch (ValidationException $exception) {
+                $generationError = collect($exception->errors())->flatten()->first();
+            }
+        }
 
         $deliveryQuery = $deliveries->scopedQuery($request->user())
             ->when($filters['date'] ?? null, fn ($q, $date) => $q->whereDate('deliveries.delivery_date', $date))
@@ -78,7 +96,8 @@ class DeliveryController extends Controller
         return Inertia::render('Deliveries/Index', [
             'deliveries' => $history,
             'filters' => $filters,
-            'today' => today()->toDateString(),
+            'today' => $today,
+            'generationError' => $generationError,
             'statuses' => collect(DeliveryStatus::cases())
                 ->map(fn ($status) => ['id' => $status->value, 'name' => $status->label()]),
         ]);

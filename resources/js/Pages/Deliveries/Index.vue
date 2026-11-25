@@ -8,12 +8,13 @@ defineProps({
     filters: Object,
     statuses: Array,
     today: String,
+    generationError: String,
 })
 
 const page = usePage()
 
 const filter = useForm({
-    date: page.props.filters.date ?? '',
+    date: page.props.filters.date ?? page.props.today,
     status: page.props.filters.status ?? '',
     q: page.props.filters.q ?? '',
 })
@@ -26,6 +27,13 @@ const errors = (form) => Object.values(form.errors).join(' ')
 <template>
     <Head title="Deliveries" />
     <WorkspaceLayout title="Daily Deliveries">
+        <p
+            v-if="generationError"
+            class="alert alert-danger"
+            role="alert"
+        >
+            Today's deliveries could not be generated: {{ generationError }}
+        </p>
         <form
             v-if="page.props.auth?.user?.role === 'client_admin'"
             class="panel"

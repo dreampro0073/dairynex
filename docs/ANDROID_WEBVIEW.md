@@ -4,7 +4,47 @@ The web client uses `VisualViewport` only as a fallback for WebViews that pan co
 
 ## Android system Back button
 
-The web app's navigation uses Inertia's browser history, and the admin layout also has an in-app back arrow. The Android Activity must send its system Back button to the WebView while the WebView has a previous page; otherwise Android finishes the Activity and closes the app. The Android Activity source is maintained by the mobile wrapper, not this Laravel repository. Add this callback where that Activity creates its `WebView`:
+The web app's navigation uses Inertia's browser history, and the admin layout also has an in-app back arrow. React Native must forward Android's hardware Back press to the same WebView while that WebView has a previous page. Otherwise Android handles the press at the app/navigation level and the user stays on the current web page (or the app closes).
+
+In the React Native screen that renders `react-native-webview`, keep the WebView's `canGoBack` state current and call `goBack()` from `BackHandler`:
+
+```tsx
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { BackHandler } from 'react-native'
+import WebView, { WebViewNavigation } from 'react-native-webview'
+
+export function DairyNexScreen() {
+  const webViewRef = useRef<WebView>(null)
+  const [canGoBack, setCanGoBack] = useState(false)
+
+  const onNavigationStateChange = useCallback((navigation: WebViewNavigation) => {
+    setCanGoBack(navigation.canGoBack)
+  }, [])
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!canGoBack) return false // Let the app or navigator handle root-level Back.
+
+      webViewRef.current?.goBack()
+      return true // The WebView handled this press.
+    })
+
+    return () => subscription.remove()
+  }, [canGoBack])
+
+  return (
+    <WebView
+      ref={webViewRef}
+      source={{ uri: 'https://YOUR-DAIRYNEX-URL' }}
+      onNavigationStateChange={onNavigationStateChange}
+    />
+  )
+}
+```
+
+Keep the listener on the screen that owns the WebView, and use that same WebView ref for both rendering and `goBack()`. Returning `false` when `canGoBack` is false preserves normal app exit or parent navigator behavior.
+
+If the wrapper is a native Android Activity rather than React Native, the Activity must forward Back to its WebView. The Android Activity source is maintained by the mobile wrapper, not this Laravel repository. Add this callback where that Activity creates its `WebView`:
 
 ```kotlin
 onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {

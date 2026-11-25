@@ -184,7 +184,7 @@ class DeliveryGenerationService
                         $delivery = $existing;
                         $created++;
                     } else {
-                        $delivery = Delivery::create([
+                        $delivery = new Delivery([
                             'client_id' => $actor->client_id,
                             'customer_id' => $customer->id,
                             'subscription_id' => $subscription->id,
@@ -196,8 +196,14 @@ class DeliveryGenerationService
                             'status_id' => 1,
                         ]);
 
+                        // Store the unique key on the first insert so concurrent
+                        // generators cannot create a duplicate delivery row.
                         $delivery->forceFill([
                             'generation_key' => $key,
+                        ]);
+                        $delivery->save();
+
+                        $delivery->forceFill([
                             'delivery_pin_hash' => $delivery->pin_required ? Hash::make((string) random_int(100000, 999999)) : null,
                         ])->save();
                         $created++;
@@ -233,14 +239,16 @@ class DeliveryGenerationService
                 }
             }
 
-            DB::table('audit_logs')->insert([
-                'client_id' => $actor->client_id,
-                'user_id' => $actor->id,
-                'action' => 'deliveries_generated',
-                'table_name' => 'deliveries',
-                'new_values' => json_encode(['date' => $day->toDateString(), 'created' => $created]),
-                'created_at' => now(),
-            ]);
+            if ($created > 0) {
+                DB::table('audit_logs')->insert([
+                    'client_id' => $actor->client_id,
+                    'user_id' => $actor->id,
+                    'action' => 'deliveries_generated',
+                    'table_name' => 'deliveries',
+                    'new_values' => json_encode(['date' => $day->toDateString(), 'created' => $created]),
+                    'created_at' => now(),
+                ]);
+            }
 
             return $created;
         }, 3);

@@ -3,6 +3,8 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Head, Link } from '@inertiajs/vue3'
 
 defineProps({ sale: Object })
+
+const printReceipt = () => window.print()
 </script>
 
 <template>
@@ -10,14 +12,23 @@ defineProps({ sale: Object })
     <AdminLayout>
         <template #title>Sale receipt</template>
         <section class="panel receipt">
+            <div class="receipt-thanks">
+                <span class="receipt-check" aria-hidden="true">
+                    <i class="bi bi-check-lg"></i>
+                </span>
+                <div>
+                    <h2>Thank you! Sale saved</h2>
+                    <p>Receipt {{ sale.receipt_no }} · {{ sale.sold_at }}</p>
+                </div>
+            </div>
             <div class="panel-head">
                 <div>
-                    <h2>{{ sale.receipt_no }}</h2>
-                    <p>{{ sale.sold_at }}</p>
+                    <h3>Sale details</h3>
                 </div>
                 <button
+                    type="button"
                     class="btn secondary"
-                    onclick="window.print()"
+                    @click="printReceipt"
                 >
                     Print receipt
                 </button>
@@ -54,18 +65,20 @@ defineProps({ sale: Object })
                 <strong>₹{{ sale.total }}</strong>
             </div>
             <p>Paid ₹{{ sale.paid_amount }} · Due ₹{{ sale.due_amount }}</p>
-            <Link
-                href="/quick-sale"
-                class="btn"
-            >
-                New sale
-            </Link>
-            <Link
-                href="/walk-in-sales"
-                class="btn secondary"
-            >
-                Sales register
-            </Link>
+            <div class="receipt-actions">
+                <Link
+                    href="/quick-sale"
+                    class="btn"
+                >
+                    New sale
+                </Link>
+                <Link
+                    href="/walk-in-sales"
+                    class="btn secondary"
+                >
+                    Sales register
+                </Link>
+            </div>
         </section>
     </AdminLayout>
 </template>
