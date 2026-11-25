@@ -309,6 +309,10 @@ button {
     color: var(--ink);
 }
 
+.admin-mobile-nav {
+    display: none;
+}
+
 .back-btn {
     display: flex;
     background: var(--bg);
@@ -2237,7 +2241,51 @@ a.btn {
 
     .content {
         min-height: 0;
-        padding: 16px 14px calc(24px + var(--keyboard-height, 0px));
+        padding: 16px 14px calc(88px + env(safe-area-inset-bottom) + var(--keyboard-height, 0px));
+    }
+
+    .admin-mobile-nav {
+        position: fixed;
+        z-index: 80;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
+        background: var(--surface);
+        border-top: 1px solid var(--line);
+        box-shadow: 0 -4px 14px rgba(21, 43, 29, 0.08);
+    }
+
+    .admin-mobile-nav > a,
+    .admin-mobile-nav > button {
+        min-width: 0;
+        min-height: 54px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        border: 0;
+        background: transparent;
+        color: var(--ink-faint);
+        text-decoration: none;
+        font: inherit;
+        font-size: clamp(8px, 2.5vw, 10px);
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .admin-mobile-nav > a.active,
+    .admin-mobile-nav > button:active {
+        color: var(--primary);
+        font-weight: 750;
+    }
+
+    .admin-mobile-nav i {
+        font-size: 19px;
+        line-height: 1;
     }
 
     .topbar {

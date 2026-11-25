@@ -25,6 +25,10 @@ const isActive = (path) => {
     return currentUrl.value.startsWith(path)
 }
 
+const salesActive = computed(() =>
+    ['/quick-sale', '/walk-in-sales', '/daily-sales-report'].some((path) => isActive(path)),
+)
+
 const closeSidebar = () => {
     sidebarOpen.value = false
 }
@@ -333,6 +337,34 @@ const goBack = () => {
                     </div>
                 </section>
             </main>
+
+            <nav class="admin-mobile-nav" aria-label="Main navigation">
+                <Link href="/dashboard" :class="{ active: isActive('/dashboard') }">
+                    <i class="bi bi-grid"></i>
+                    <span>Home</span>
+                </Link>
+                <Link href="/customers" :class="{ active: isActive('/customers') }">
+                    <i class="bi bi-people"></i>
+                    <span>Customers</span>
+                </Link>
+                <Link href="/deliveries" :class="{ active: isActive('/deliveries') }">
+                    <i class="bi bi-truck"></i>
+                    <span>Deliveries</span>
+                </Link>
+                <Link href="/quick-sale" :class="{ active: salesActive }">
+                    <i class="bi bi-cart-plus"></i>
+                    <span>Sales</span>
+                </Link>
+                <button
+                    type="button"
+                    :aria-expanded="sidebarOpen"
+                    aria-label="Open settings menu"
+                    @click="sidebarOpen = true"
+                >
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
         </div>
     </div>
 </template>
