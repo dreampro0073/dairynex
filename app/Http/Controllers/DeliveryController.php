@@ -76,8 +76,8 @@ class DeliveryController extends Controller
                     DB::raw('NULL as status_id'),
                     'sales.total as total_amount',
                     DB::raw('NULL as pin_required'),
-                    DB::raw('NULL as customer_pin_required'),
-                    DB::raw("COALESCE(customers.name, sales.customer_name, 'Guest') as customer_name")
+                    DB::raw("COALESCE(customers.name, sales.customer_name, 'Guest') as customer_name"),
+                    DB::raw('NULL as customer_pin_required')
                 );
 
             $historyQuery->unionAll($salesQuery);
