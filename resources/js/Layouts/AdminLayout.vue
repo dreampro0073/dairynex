@@ -264,6 +264,20 @@ const goBack = () => {
                         Ledger
                     </Link>
                 </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-label">ACCOUNT</div>
+                    <Link
+                        href="/change-password"
+                        class="nav-item"
+                        :class="{ current: isActive('/change-password') }"
+                    >
+                        <span class="ic">
+                            <i class="bi bi-lock"></i>
+                        </span>
+                        Change Password
+                    </Link>
+                </div>
             </aside>
 
             <!-- Main -->

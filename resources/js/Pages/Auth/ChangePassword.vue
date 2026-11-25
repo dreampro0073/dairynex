@@ -13,13 +13,13 @@ const submit = () => form.post('/change-password', { onFinish: () => form.reset(
 
 <template>
     <Head title="Change password" />
-    <AuthLayout title="Choose a permanent password">
+    <AuthLayout title="Change your password">
         <p>
-            Change your temporary password before accessing your dairy. Use at least 8 characters.
+            Enter your current password, then choose a new password with at least 8 characters.
         </p>
         <form @submit.prevent="submit">
             <div class="field">
-                <label for="current">Temporary / current password</label>
+                <label for="current">Current password</label>
                 <input
                     id="current"
                     v-model="form.current_password"
