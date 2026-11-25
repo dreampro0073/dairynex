@@ -160,24 +160,20 @@ class DeliveryGenerationService
                         ->select('routes.*')
                         ->get();
 
-                    if ($routes->count() !== 1) {
+                    if ($routes->count() > 1) {
                         throw ValidationException::withMessages(['route' => 'Each scheduled customer must have exactly one active route.']);
                     }
 
                     $route = $routes->first();
-                    $driver = User::where('client_id', $actor->client_id)
+                    $driver = $route ? User::where('client_id', $actor->client_id)
                         ->where('user_type_id', Role::DeliveryBoy->value)
                         ->where('status', 1)
-                        ->find($route->delivery_boy_id);
-
-                    if (! $driver) {
-                        throw ValidationException::withMessages(['route' => 'The route must have an active Delivery Boy.']);
-                    }
+                        ->find($route->delivery_boy_id) : null;
 
                     if ($existing) {
                         $existing->update([
-                            'route_id' => $route->id,
-                            'delivery_boy_id' => $driver->id,
+                            'route_id' => $route?->id,
+                            'delivery_boy_id' => $driver?->id,
                         ]);
                         DB::table('delivery_items')->where('client_id', $actor->client_id)
                             ->where('delivery_id', $existing->id)->delete();
@@ -190,8 +186,8 @@ class DeliveryGenerationService
                             'subscription_id' => $subscription->id,
                             'delivery_date' => $day->toDateString(),
                             'delivery_slot_id' => $slot,
-                            'route_id' => $route->id,
-                            'delivery_boy_id' => $driver->id,
+                            'route_id' => $route?->id,
+                            'delivery_boy_id' => $driver?->id,
                             'source_type' => 1,
                             'status_id' => 1,
                         ]);

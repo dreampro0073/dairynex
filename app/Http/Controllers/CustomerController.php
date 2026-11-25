@@ -181,10 +181,6 @@ class CustomerController extends Controller
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
 
-                'date_of_birth' => $validated['date_of_birth'] ?? null,
-
-                'gender' => $validated['gender'] ?? null,
-
                 'opening_balance' => $validated['opening_balance'] ?? 0,
 
                 'credit_limit' => $validated['credit_limit'] ?? 0,
@@ -368,6 +364,13 @@ class CustomerController extends Controller
             $customer->id
         );
 
+        $existingAddress = $customer->defaultAddress;
+        foreach (['address_line2', 'landmark', 'city', 'state', 'pincode', 'latitude', 'longitude'] as $field) {
+            if (! array_key_exists($field, $validated)) {
+                $validated[$field] = $existingAddress?->{$field};
+            }
+        }
+
         $validated['delivery_pin_required'] ??= $customer->delivery_pin_required;
         $validated['status'] ??= $customer->status;
 
@@ -397,10 +400,6 @@ class CustomerController extends Controller
                 'delivery_pin_required' => $validated['delivery_pin_required'] ?? (bool) config('dairynex.delivery_pin_required', true),
                 'mobile' => $validated['mobile'] ?? null,
                 'email' => $validated['email'] ?? null,
-
-                'date_of_birth' => $validated['date_of_birth'] ?? null,
-
-                'gender' => $validated['gender'] ?? null,
 
                 'opening_balance' => $validated['opening_balance'] ?? 0,
 

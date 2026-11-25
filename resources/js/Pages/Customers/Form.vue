@@ -37,21 +37,12 @@ const form = useForm({
     status: Number(props.customer?.status ?? 1),
     mobile: props.customer?.mobile ?? '',
     email: props.customer?.email ?? '',
-    date_of_birth: props.customer?.date_of_birth ?? '',
-    gender: Number(props.customer?.gender ?? 1),
     customer_type: Number(props.customer?.customer_type ?? 1),
     rate_type: props.customer?.rate_type ?? 'fixed',
     credit_limit: props.customer?.credit_limit ?? '',
     opening_balance: props.customer?.opening_balance ?? '',
     address_line1: props.customer?.address_line1 ?? '',
-    address_line2: props.customer?.address_line2 ?? '',
-    landmark: props.customer?.landmark ?? '',
-    city: props.customer?.city ?? '',
-    state: props.customer?.state ?? '',
-    pincode: props.customer?.pincode ?? '',
     route_id: props.customer?.route_id ?? '',
-    latitude: props.customer?.latitude ?? '',
-    longitude: props.customer?.longitude ?? '',
     supply_preference: Number(props.customer?.supply_preference ?? 1),
     subscription_items: existingItems.map((item) => ({
         id: item.id ?? null,
@@ -199,27 +190,6 @@ const submit = (withSubscription = false) => {
                     </div>
 
                     <div class="field">
-                        <label>Date of Birth</label>
-
-                        <input
-                            v-model="form.date_of_birth"
-                            type="date"
-                        />
-                    </div>
-
-                    <div class="field">
-                        <label>Gender</label>
-
-                        <select v-model.number="form.gender">
-                            <option :value="1">Male</option>
-
-                            <option :value="2">Female</option>
-
-                            <option :value="3">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="field">
                         <label>Customer Type</label>
 
                         <select v-model.number="form.customer_type">
@@ -235,9 +205,9 @@ const submit = (withSubscription = false) => {
                         <label>Milk Rate Type</label>
                         <select v-model="form.rate_type">
                             <option value="fixed">Fixed rate</option>
-                            <option value="varying">Varying rate (enter amount per delivery)</option>
+                            <option value="varying">Varying rate (daily rate on delivery)</option>
                         </select>
-                        <small>Varying rate customers need a manual amount for each delivered product.</small>
+                        <small>Varying rate customers need a daily rate for each delivered product.</small>
                         <div v-if="form.errors.rate_type" class="error-text">{{ form.errors.rate_type }}</div>
                     </div>
 
@@ -294,50 +264,10 @@ const submit = (withSubscription = false) => {
                     </div>
 
                     <div class="field">
-                        <label>Landmark</label>
-
-                        <input
-                            v-model="form.landmark"
-                            type="text"
-                            placeholder="e.g. near Ram Mandir"
-                        />
-                    </div>
-
-                    <div class="field">
-                        <label>City</label>
-
-                        <input
-                            v-model="form.city"
-                            type="text"
-                            placeholder="e.g. Haridwar"
-                        />
-                    </div>
-
-                    <div class="field">
-                        <label>State</label>
-
-                        <input
-                            v-model="form.state"
-                            type="text"
-                            placeholder="e.g. Uttarakhand"
-                        />
-                    </div>
-
-                    <div class="field">
-                        <label>Pincode</label>
-
-                        <input
-                            v-model="form.pincode"
-                            type="text"
-                            placeholder="e.g. 249401"
-                        />
-                    </div>
-
-                    <div class="field">
                         <label>Delivery Route</label>
 
                         <select v-model="form.route_id">
-                            <option value="">Select route</option>
+                            <option value="">No route (optional)</option>
 
                             <option
                                 v-for="route in routes"
@@ -349,27 +279,6 @@ const submit = (withSubscription = false) => {
                         </select>
                     </div>
 
-                    <div class="field">
-                        <label>Latitude (optional)</label>
-
-                        <input
-                            v-model="form.latitude"
-                            type="number"
-                            step="0.0000001"
-                            placeholder="e.g. 29.9457"
-                        />
-                    </div>
-
-                    <div class="field">
-                        <label>Longitude (optional)</label>
-
-                        <input
-                            v-model="form.longitude"
-                            type="number"
-                            step="0.0000001"
-                            placeholder="e.g. 78.1642"
-                        />
-                    </div>
                 </div>
             </div>
 

@@ -256,7 +256,7 @@ class DeliveryRouteController extends Controller
 
             // Restrict assignment to active delivery staff in the current dairy.
             'delivery_boy_id' => [
-                'required',
+                'nullable',
                 'integer',
                 'min:0',
                 Rule::when(
