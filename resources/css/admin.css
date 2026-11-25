@@ -2773,6 +2773,24 @@ a.btn {
 .delivery-app .portal-bottom > a.active {
     color: #2468a5;
 }
+.customer-app .portal-bottom {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding-left: 4px;
+    padding-right: 4px;
+}
+.customer-app .portal-bottom > a {
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(8px, 2.5vw, 10px);
+}
+.today-deliveries {
+    display: grid;
+    gap: 5px;
+}
+.today-deliveries > div {
+    display: grid;
+    gap: 3px;
+}
 .delivery-app .portal-action {
     background: #2468a5;
 }

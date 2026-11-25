@@ -53,19 +53,30 @@ class WalkInSaleService
                     throw ValidationException::withMessages(['items' => 'Every item quantity must be greater than zero.']);
                 }
 
-                $rate = Decimal::scaled(
-                    DB::table('product_rates')
-                        ->where('client_id', $actor->client_id)
-                        ->where('product_id', $product->id)
-                        ->whereDate('effective_from', '<=', today())
-                        ->where(fn ($q) => $q
-                            ->whereNull('effective_to')
-                            ->orWhereDate('effective_to', '>=', today()))
-                        ->orderByDesc('effective_from')
-                        ->orderByDesc('id')
-                        ->value('rate') ?? $product->base_rate,
-                    2
-                );
+                $currentRate = DB::table('product_rates')
+                    ->where('client_id', $actor->client_id)
+                    ->where('product_id', $product->id)
+                    ->whereDate('effective_from', '<=', today())
+                    ->where(fn ($q) => $q
+                        ->whereNull('effective_to')
+                        ->orWhereDate('effective_to', '>=', today()))
+                    ->orderByDesc('effective_from')
+                    ->orderByDesc('id')
+                    ->value('rate') ?? $product->base_rate;
+
+                if ($customer?->rate_type === 'varying') {
+                    if (! array_key_exists('rate', $line) || $line['rate'] === null || $line['rate'] === '') {
+                        throw ValidationException::withMessages(['items' => 'Enter a daily rate for every product sold to this varying-rate customer.']);
+                    }
+
+                    $rate = Decimal::scaled($line['rate'], 2, 'items');
+                    if ($rate < 0 || $rate > 999999999) {
+                        throw ValidationException::withMessages(['items' => 'Enter a valid non-negative rate.']);
+                    }
+                } else {
+                    $rate = Decimal::scaled($currentRate, 2);
+                }
+
                 $amount = Decimal::charge($quantity, $rate);
                 $subtotal += $amount;
                 $lines[] = [

@@ -11,7 +11,7 @@ const props = defineProps({
 })
 
 const form = useForm({
-    key: props.idempotencyKey,
+    key: props.idempotencyKey ?? props.key,
     customer_id: '',
     customer_name: '',
     customer_mobile: '',
@@ -24,6 +24,20 @@ const search = ref('')
 const productSearch = ref('')
 
 const saved = ref(false)
+
+const selectedCustomer = computed(() =>
+    props.customers.find((customer) => String(customer.id) === String(form.customer_id)),
+)
+const varyingRate = computed(() => selectedCustomer.value?.rate_type === 'varying')
+
+const customerChanged = (event) => {
+    const customer = props.customers.find((entry) => String(entry.id) === String(event.target.value))
+    const isVarying = customer?.rate_type === 'varying'
+
+    form.items.forEach((item) => {
+        item.rate = isVarying ? '' : item.default_rate
+    })
+}
 
 const filteredCustomers = computed(() =>
     props.customers.filter(
@@ -49,7 +63,8 @@ const addProduct = (product) => {
         form.items.push({
             product_id: product.id,
             name: product.name,
-            rate: Number(product.current_rate),
+            default_rate: Number(product.current_rate),
+            rate: varyingRate.value ? '' : Number(product.current_rate),
             quantity: 1,
         })
     }
@@ -99,6 +114,7 @@ const save = () => {
                     <select
                         v-model="form.customer_id"
                         class="walkin-select"
+                        @change="customerChanged"
                     >
                         <option value="">Guest / anonymous</option>
                         <option
@@ -144,7 +160,8 @@ const save = () => {
                             @click="addProduct(product)"
                         >
                             <strong>{{ product.name }}</strong>
-                            <span>₹{{ Number(product.current_rate).toFixed(2) }} / unit</span>
+                            <span v-if="varyingRate">Daily rate entered in the cart</span>
+                            <span v-else>₹{{ Number(product.current_rate).toFixed(2) }} / unit</span>
                             <small>Add +</small>
                         </button>
                     </div>
@@ -169,7 +186,7 @@ const save = () => {
                     >
                         <div>
                             <strong>{{ item.name }}</strong>
-                            <small>₹{{ Number(item.rate).toFixed(2) }} each</small>
+                            <small v-if="!varyingRate">₹{{ Number(item.rate).toFixed(2) }} each</small>
                         </div>
                         <label class="field">
                             <input
@@ -180,6 +197,18 @@ const save = () => {
                                 aria-label="Quantity"
                             />
                         </label>
+                        <label v-if="varyingRate" class="field">
+                            <span>Daily rate (₹/unit)</span>
+                            <input
+                                v-model="item.rate"
+                                type="number"
+                                min="0"
+                                max="9999999.99"
+                                step="0.01"
+                                required
+                                aria-label="Daily rate"
+                            />
+                        </label>
                         <button
                             type="button"
                             class="btn secondary sm"
@@ -187,7 +216,7 @@ const save = () => {
                         >
                             Remove
                         </button>
-                        <b>₹{{ (item.quantity * item.rate).toFixed(2) }}</b>
+                        <b>₹{{ ((Number(item.quantity) || 0) * (Number(item.rate) || 0)).toFixed(2) }}</b>
                     </div>
                     <p
                         v-if="!form.items.length"

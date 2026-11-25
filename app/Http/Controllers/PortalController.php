@@ -50,6 +50,31 @@ class PortalController extends Controller
             ->limit(6)
             ->get();
 
+        $todayDelivery = (clone $deliveries)
+            ->whereDate('delivery_date', today())
+            ->orderBy('delivery_slot_id')
+            ->get(['id', 'delivery_date', 'delivery_slot_id', 'status_id', 'total_amount']);
+
+        $deliveryItems = DB::table('delivery_items')->join('products', function ($join) {
+            $join->on('products.id', '=', 'delivery_items.product_id')
+                ->on('products.client_id', '=', 'delivery_items.client_id');
+        })
+            ->where('delivery_items.client_id', $client)
+            ->whereIn('delivery_items.delivery_id', $recent->pluck('id')->merge($todayDelivery->pluck('id'))->unique())
+            ->get([
+                'delivery_items.delivery_id',
+                'delivery_items.actual_quantity',
+                'products.name',
+                'products.unit_type',
+            ])
+            ->groupBy('delivery_id');
+
+        $unitLabels = [1 => 'L', 2 => 'ml', 3 => 'kg', 4 => 'g', 5 => 'pc', 6 => 'pkt'];
+        $deliveredQuantity = fn ($items) => $items
+            ->filter(fn ($item) => (float) $item->actual_quantity > 0)
+            ->map(fn ($item) => $item->name.' '.number_format((float) $item->actual_quantity, 3).' '.($unitLabels[$item->unit_type] ?? ''))
+            ->implode(', ');
+
         $counterSales = DB::table('walk_in_sales')
             ->leftJoin('ref_payment_methods as methods', 'methods.id', '=', 'walk_in_sales.payment_method_id')
             ->where('client_id', $client)
@@ -65,13 +90,20 @@ class PortalController extends Controller
                 DB::raw("COALESCE(methods.name, 'Credit') as payment_method"),
             ]);
 
-        $recentHistory = $recent->map(fn ($delivery) => [
-            'id' => 'delivery-'.$delivery->id,
-            'record_type' => 'delivery',
-            'date' => $delivery->delivery_date,
-            'status' => DeliveryStatus::tryFrom((int) $delivery->status_id)?->label() ?? 'Pending',
-            'amount' => $delivery->total_amount,
-        ])->concat($counterSales->map(fn ($sale) => [
+        $recentHistory = $recent->map(function ($delivery) use ($deliveryItems, $deliveredQuantity) {
+            $isDelivered = in_array((int) $delivery->status_id, [3, 8]);
+
+            return [
+                'id' => 'delivery-'.$delivery->id,
+                'record_type' => 'delivery',
+                'date' => $delivery->delivery_date,
+                'status' => DeliveryStatus::tryFrom((int) $delivery->status_id)?->label() ?? 'Pending',
+                'amount' => $delivery->total_amount,
+                'detail' => $isDelivered
+                    ? ($deliveredQuantity($deliveryItems->get($delivery->id, collect())) ?: 'No milk delivered')
+                    : null,
+            ];
+        })->concat($counterSales->map(fn ($sale) => [
             'id' => 'counter-sale-'.$sale->id,
             'record_type' => 'counter_sale',
             'date' => $sale->sold_at,
@@ -137,6 +169,16 @@ class PortalController extends Controller
             ->where('subscription_items.subscription_id', $subscription->id)
             ->get(['products.name', 'subscription_items.default_quantity', 'subscription_items.rate']) : collect();
 
+        $todayDelivery->each(function ($delivery) use ($deliveryItems) {
+            $delivery->items = ($deliveryItems->get($delivery->id, collect()))
+                ->map(fn ($item) => [
+                    'name' => $item->name,
+                    'actual_quantity' => $item->actual_quantity,
+                    'unit_type' => $item->unit_type,
+                ])
+                ->values();
+        });
+
         return Inertia::render('Portals/Customer', [
             'tab' => $tab,
             'customer' => $customer,
@@ -148,10 +190,7 @@ class PortalController extends Controller
                 'outstanding' => Decimal::format(app(LedgerService::class)->balance($customer)),
             ],
             'deliveries' => $recentHistory,
-            'todayDelivery' => (clone $deliveries)
-                ->whereDate('delivery_date', today())
-                ->orderBy('delivery_slot_id')
-                ->get(['id', 'delivery_date', 'delivery_slot_id', 'status_id', 'total_amount']),
+            'todayDelivery' => $todayDelivery,
             'invoices' => $invoices,
             'purchases' => $purchases,
             'subscription' => $subscription,

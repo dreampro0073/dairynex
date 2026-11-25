@@ -40,7 +40,7 @@ class WalkInSaleController extends Controller
             'customers' => Customer::where('client_id', $clientId)
                 ->where('status', 1)
                 ->orderBy('name')
-                ->get(['id', 'name', 'mobile']),
+                ->get(['id', 'name', 'mobile', 'rate_type']),
             'methods' => DB::table('ref_payment_methods')
                 ->whereIn('id', [1, 2])
                 ->orderBy('id')
@@ -60,6 +60,7 @@ class WalkInSaleController extends Controller
             'items' => ['required', 'array', 'min:1', 'max:50'],
             'items.*.product_id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:999999.999', 'decimal:0,3'],
+            'items.*.rate' => ['nullable', 'numeric', 'min:0', 'max:9999999.99', 'decimal:0,2'],
         ]);
 
         $this->authorizeAdmin($request);

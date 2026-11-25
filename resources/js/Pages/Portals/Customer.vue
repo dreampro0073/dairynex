@@ -42,12 +42,23 @@ const deliverySummary = (delivery) => {
 
     if (delivery.status_id === 3) {
         status = 'Delivered'
+    } else if (delivery.status_id === 8) {
+        status = 'Partially delivered'
     } else if (delivery.status_id === 4) {
         status = 'Skipped'
     }
 
     return `${slot} · ${status}`
 }
+
+const deliveredItems = (delivery) =>
+    (delivery.items || [])
+        .filter((item) => Number(item.actual_quantity) > 0)
+        .map((item) => {
+            const unit = ({ 1: 'L', 2: 'ml', 3: 'kg', 4: 'g', 5: 'pc', 6: 'pkt' })[item.unit_type] || ''
+            return `${item.name} ${Number(item.actual_quantity).toFixed(3)} ${unit}`.trim()
+        })
+        .join(', ')
 </script>
 
 <template>
@@ -78,9 +89,14 @@ const deliverySummary = (delivery) => {
                     <span class="portal-icon">🥛</span>
                     <div>
                         <strong>Today's delivery</strong>
-                        <small v-if="todayDelivery.length">
-                            {{ todayDelivery.map(deliverySummary).join(' / ') }}
-                        </small>
+                        <div v-if="todayDelivery.length" class="today-deliveries">
+                            <div v-for="delivery in todayDelivery" :key="delivery.id">
+                                <small>{{ deliverySummary(delivery) }}</small>
+                                <small v-if="[3, 8].includes(Number(delivery.status_id))">
+                                    Delivered: {{ deliveredItems(delivery) || 'No milk delivered' }}
+                                </small>
+                            </div>
+                        </div>
                         <small v-else>No delivery scheduled today</small>
                     </div>
                 </div>
