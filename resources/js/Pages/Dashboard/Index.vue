@@ -179,16 +179,14 @@ const deliveryStatusText = (status) =>
                         <tbody>
                             <tr
                                 v-for="delivery in deliveries"
-                                :key="delivery.id"
+                                :key="`${delivery.record_type}-${delivery.id}`"
                             >
                                 <td>
                                     {{ delivery.customer }}
                                 </td>
 
                                 <td>
-                                    <span class="route-tag">
-                                        {{ delivery.route }}
-                                    </span>
+                                    <span class="route-tag">{{ delivery.route }}</span>
                                 </td>
 
                                 <td>
@@ -198,19 +196,19 @@ const deliveryStatusText = (status) =>
                                 <td>
                                     <span
                                         class="badge"
-                                        :class="deliveryStatusClass(delivery.status)"
+                                        :class="delivery.record_type === 'counter_sale' ? 'ok' : deliveryStatusClass(delivery.status)"
                                     >
-                                        {{ deliveryStatusText(delivery.status) }}
+                                        {{ delivery.record_type === 'counter_sale' ? 'Counter Sale' : deliveryStatusText(delivery.status) }}
                                     </span>
                                 </td>
 
                                 <td class="num">₹{{ money(delivery.amount) }}</td>
                                 <td>
                                     <Link
-                                        :href="`/deliveries/${delivery.id}`"
+                                        :href="delivery.record_type === 'counter_sale' ? `/walk-in-sales/${delivery.id}` : `/deliveries/${delivery.id}`"
                                         class="link"
                                     >
-                                        {{ [1, 2].includes(Number(delivery.status)) ? 'Process' : 'View' }}
+                                        {{ delivery.record_type === 'counter_sale' ? 'Receipt' : [1, 2].includes(Number(delivery.status)) ? 'Process' : 'View' }}
                                     </Link>
                                 </td>
                             </tr>
@@ -222,9 +220,9 @@ const deliveryStatusText = (status) =>
                                             <i class="bi bi-truck"></i>
                                         </div>
 
-                                        <div class="t">No deliveries today</div>
+                                        <div class="t">No deliveries or counter sales today</div>
 
-                                        <div class="s">Today's deliveries will appear here.</div>
+                                        <div class="s">Today's deliveries and counter sales will appear here.</div>
                                     </div>
                                 </td>
                             </tr>

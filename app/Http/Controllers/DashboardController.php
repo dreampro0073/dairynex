@@ -101,6 +101,33 @@ class DashboardController extends Controller
                 DB::raw("COALESCE(methods.name, 'Credit') as payment_method"),
             ]);
 
+        $counterSaleProducts = DB::table('walk_in_sale_items')
+            ->where('client_id', $client)
+            ->whereIn('sale_id', $counterSales->pluck('id'))
+            ->orderBy('id')
+            ->get(['sale_id', 'product_name'])
+            ->groupBy('sale_id');
+
+        $dailyRows = $recent->map(fn ($row) => [
+            'record_type' => 'delivery',
+            'id' => $row->id,
+            'sort_at' => $row->created_at,
+            'customer' => $customerNames[$row->customer_id] ?? 'Customer',
+            'route' => $routeNames[$row->route_id] ?? 'Unassigned',
+            'product' => ($lines[$row->id] ?? collect())->pluck('name')->implode(', '),
+            'status' => $row->status_id,
+            'amount' => $row->total_amount,
+        ])->concat($counterSales->map(fn ($sale) => [
+            'record_type' => 'counter_sale',
+            'id' => $sale->id,
+            'sort_at' => $sale->sold_at,
+            'customer' => $sale->customer,
+            'route' => 'Counter Sale',
+            'product' => ($counterSaleProducts[$sale->id] ?? collect())->pluck('product_name')->implode(', '),
+            'status' => 'Counter Sale',
+            'amount' => $sale->total,
+        ]))->sortByDesc('sort_at')->take(8)->values();
+
         return Inertia::render('Dashboard/Index', [
             'stats' => [
                 'today_delivered' => $delivered,
@@ -124,16 +151,7 @@ class DashboardController extends Controller
                     ->whereIn('status', [2, 3])
                     ->whereDate('period_to', '<', today()->startOfMonth())->distinct()->count('customer_id'),
             ],
-            'deliveries' => $recent->map(fn ($row) => [
-                'id' => $row->id,
-                'customer' => $customerNames[$row->customer_id] ?? 'Customer',
-                'route' => $routeNames[$row->route_id] ?? 'Unassigned',
-                'product' => ($lines[$row->id] ?? collect())
-                    ->pluck('name')
-                    ->implode(', '),
-                'status' => $row->status_id,
-                'amount' => $row->total_amount,
-            ]),
+            'deliveries' => $dailyRows,
             'ledgerActivities' => $activity->map(fn ($row) => [
                 'id' => $row->id,
                 'customer' => $activityNames[$row->customer_id] ?? 'Customer',
