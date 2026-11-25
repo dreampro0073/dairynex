@@ -50,7 +50,8 @@ class DeliveryController extends Controller
                 'deliveries.status_id',
                 'deliveries.total_amount',
                 'deliveries.pin_required',
-                'customers.name as customer_name'
+                'customers.name as customer_name',
+                'customers.delivery_pin_required as customer_pin_required'
             );
 
         $historyQuery = $deliveryQuery->toBase();
@@ -75,6 +76,7 @@ class DeliveryController extends Controller
                     DB::raw('NULL as status_id'),
                     'sales.total as total_amount',
                     DB::raw('NULL as pin_required'),
+                    DB::raw('NULL as customer_pin_required'),
                     DB::raw("COALESCE(customers.name, sales.customer_name, 'Guest') as customer_name")
                 );
 
@@ -91,6 +93,10 @@ class DeliveryController extends Controller
                 'status' => $row->record_type === 'counter_sale'
                     ? 'Counter Sale'
                     : (DeliveryStatus::tryFrom((int) $row->status_id)?->label() ?? 'Unknown'),
+                'pin_required' => $row->record_type === 'delivery' && in_array((int) $row->status_id, [1, 2])
+                    && $row->pin_required !== null
+                    ? (bool) $row->customer_pin_required
+                    : $row->pin_required,
             ]);
 
         return Inertia::render('Deliveries/Index', [

@@ -27,13 +27,18 @@ class DeliveryController extends Controller
                 'deliveries.status_id',
                 'deliveries.total_amount',
                 'deliveries.pin_required',
-                'customers.name as customer_name'
+                'customers.name as customer_name',
+                'customers.delivery_pin_required as customer_pin_required'
             )
             ->orderByDesc('deliveries.delivery_date')->orderByDesc('deliveries.id')->paginate(20);
 
         $data->through(fn ($row) => [
             ...$row->toArray(),
             'status' => DeliveryStatus::tryFrom($row->status_id)?->label(),
+            'pin_required' => in_array((int) $row->status_id, [1, 2])
+                && $row->pin_required !== null
+                ? (bool) $row->customer_pin_required
+                : $row->pin_required,
         ]);
 
         return response()->json($data);

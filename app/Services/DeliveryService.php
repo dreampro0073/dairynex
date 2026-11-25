@@ -25,7 +25,7 @@ class DeliveryService
 
             abort_unless($customer && $customer->status === 1, 403);
 
-            if ($delivery->pin_required !== true || ! in_array($delivery->status_id, [1, 2])) {
+            if ($delivery->pin_required === null || ! $customer->delivery_pin_required || ! in_array($delivery->status_id, [1, 2])) {
                 throw ValidationException::withMessages(['delivery' => 'This delivery cannot issue a PIN.']);
             }
 
@@ -137,7 +137,8 @@ class DeliveryService
                     throw ValidationException::withMessages(['pin' => 'The legacy verification policy is unknown. Administrator review is required.']);
                 }
 
-                if ($delivery->pin_required) {
+                $pinRequired = (bool) $customer->delivery_pin_required;
+                if ($pinRequired) {
                     if ($delivery->pin_attempts >= 5) {
                         return ['error' => 'PIN attempts exhausted. Ask the customer to issue a new PIN.'];
                     }
@@ -165,6 +166,17 @@ class DeliveryService
 
                     $delivery->delivery_pin_verified_at = now();
                     $delivery->pin_verified_by_user_id = $actor->id;
+                }
+
+                // A pending delivery follows the customer's current PIN setting.
+                // Persist the policy actually used when this delivery is finalized.
+                DB::table('deliveries')->where('client_id', $actor->client_id)->where('id', $id)
+                    ->update(['pin_required' => $pinRequired]);
+            } else {
+                $pinRequired = (bool) $customer->delivery_pin_required;
+                if ($delivery->pin_required !== null) {
+                    DB::table('deliveries')->where('client_id', $actor->client_id)->where('id', $id)
+                        ->update(['pin_required' => $pinRequired]);
                 }
             }
 
@@ -195,7 +207,7 @@ class DeliveryService
                 'record_id' => $id,
                 'new_values' => json_encode([
                     'actual_total' => $delivery->total_amount,
-                    'pin_required' => $delivery->pin_required,
+                    'pin_required' => $pinRequired,
                     'pin_verified' => (bool) $delivery->delivery_pin_verified_at,
                 ]),
                 'created_at' => now(),
